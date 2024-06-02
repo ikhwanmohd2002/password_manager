@@ -50,7 +50,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
         horizontal: 18,
       ),
       child: TextField(
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.black),
         controller: searchController,
         decoration: InputDecoration(
             enabledBorder: OutlineInputBorder(

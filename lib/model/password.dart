@@ -17,13 +17,11 @@ class Password {
     this.last_retrieved,
   });
 
-  Map<String, dynamic> toJson(String imageSelectedBase64) => {
+  Map<String, dynamic> toJson() => {
         "password_id": password_id.toString(),
         "user_id": user_id.toString(),
         "password_title": password_title,
         "website_url": website_url,
         "password_content": password_content,
-        "last_updated": last_updated,
-        "last_retrieved": last_retrieved,
       };
 }
