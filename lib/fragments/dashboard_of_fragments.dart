@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/constants/constant.dart';
-import 'package:password_manager/fragments/favorites_fragment_screen.dart';
+import 'package:password_manager/fragments/shared_fragment_screen.dart';
 import 'package:password_manager/fragments/home_fragment_screen.dart';
-import 'package:password_manager/fragments/order_fragment_screen.dart';
-import 'package:password_manager/fragments/profile_fragment_screen.dart';
+import 'package:password_manager/fragments/security_fragment_screen.dart';
+import 'package:password_manager/fragments/alert_fragment_screen.dart';
 import 'package:password_manager/fragments/settings_fragment_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 
@@ -12,9 +12,9 @@ class DashboardOfFragments extends StatelessWidget {
   CurrentUser _rememberCurrentUser = Get.put(CurrentUser());
   final List<Widget> _fragmentScreens = [
     HomeFragmentScreen(),
-    FavoritesFragmentScreen(),
-    OrderFragmentScreen(),
-    ProfileFragmentScreen(),
+    SharedFragmentScreen(),
+    SecurityFragmentScreen(),
+    AlertFragmentScreen(),
     SettingsFragmentScreen()
   ];
   final List _navigationButtonsProperties = [

@@ -12,26 +12,32 @@ import 'package:password_manager/user_preferences/current_user.dart';
 import 'package:password_strength_checker/password_strength_checker.dart';
 import 'package:http/http.dart' as http;
 
-class AddPasswordScreen extends StatefulWidget {
-  const AddPasswordScreen({super.key});
+class EditPasswordScreen extends StatefulWidget {
+  final Password? passwordInfo;
+
+  EditPasswordScreen({this.passwordInfo});
 
   @override
-  State<AddPasswordScreen> createState() => _AddPasswordScreenState();
+  State<EditPasswordScreen> createState() => _AddPasswordScreenState();
 }
 
-class _AddPasswordScreenState extends State<AddPasswordScreen> {
+class _AddPasswordScreenState extends State<EditPasswordScreen> {
   CurrentUser currentUser = Get.put(CurrentUser());
-
   var formKey = GlobalKey<FormState>();
-  var titleController = TextEditingController();
-  var urlController = TextEditingController();
-  var passwordController = TextEditingController();
+  late var titleController =
+      TextEditingController(text: widget.passwordInfo!.password_title);
+  late var urlController =
+      TextEditingController(text: widget.passwordInfo!.website_url);
+  late var passwordController =
+      TextEditingController(text: widget.passwordInfo!.password_content);
   var isObsecure = true.obs;
-  final passNotifier = ValueNotifier<PasswordStrength?>(null);
+  late var passNotifier = ValueNotifier<PasswordStrength?>(
+      PasswordStrength.calculate(
+          text: widget.passwordInfo!.password_content ?? ""));
 
-  addPassword() async {
+  editPassword() async {
     Password passwordModel = Password(
-      password_id: 1,
+      password_id: widget.passwordInfo!.password_id,
       user_id: currentUser.user.user_id,
       password_title: titleController.text.trim(),
       website_url: urlController.text.trim(),
@@ -39,13 +45,13 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
     );
 
     try {
-      var res = await http.post(Uri.parse(API.addPassword),
+      var res = await http.post(Uri.parse(API.editPassword),
           body: passwordModel.toJson());
 
       if (res.statusCode == 200) {
         var resBodyOfSignUp = await jsonDecode(res.body);
         if (resBodyOfSignUp['success'] == true) {
-          Fluttertoast.showToast(msg: "Added password");
+          Fluttertoast.showToast(msg: "Updated password");
           setState(() {
             titleController.clear();
             urlController.clear();
@@ -70,7 +76,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: primary1Color,
-        title: Text("Add Password"),
+        title: Text("Edit Password"),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -203,7 +209,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                       child: InkWell(
                         onTap: () {
                           if (formKey.currentState!.validate()) {
-                            addPassword();
+                            editPassword();
                           }
                         },
                         child: Container(

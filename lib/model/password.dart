@@ -24,4 +24,14 @@ class Password {
         "website_url": website_url,
         "password_content": password_content,
       };
+
+  factory Password.fromJson(Map<String, dynamic> json) => Password(
+        password_id: int.parse(json['password_id']),
+        user_id: int.parse(json['user_id']),
+        password_title: json['password_title'],
+        website_url: json['website_url'],
+        password_content: json['password_content'],
+        last_updated: DateTime.parse(json['last_updated']),
+        last_retrieved: DateTime.parse(json['last_retrieved']),
+      );
 }
