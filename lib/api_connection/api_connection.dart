@@ -1,7 +1,9 @@
 class API {
-  static const hostConnect = "http://172.20.10.2/api_password_manager";
+  static const hostConnect = "http://192.168.1.115/api_password_manager";
   static const hostConnectUser = "$hostConnect/user";
   static const hostConnectPassword = "$hostConnect/password";
+  static const hostConnectSharedPassword = "$hostConnect/shared_password";
+  static const hostConnectAlert = "$hostConnect/alert";
 
   static const validateEmail = "$hostConnect/user/validate_email.php";
   static const signUp = "$hostConnectUser/signup.php";
@@ -13,4 +15,16 @@ class API {
   static const deletePassword = "$hostConnectPassword/delete.php";
   static const updatePasswordRetrieved =
       "$hostConnectPassword/update_last_retrieved.php";
+
+  static const addSharedPassword = "$hostConnectSharedPassword/add.php";
+  static const readSharedPassword = "$hostConnectSharedPassword/read.php";
+  static const validateSharedPasswordEmail =
+      "$hostConnectSharedPassword/validate_email.php";
+  static const getPendingSharedPassword =
+      "$hostConnectSharedPassword/get_pending.php";
+  static const updateRequest = "$hostConnectSharedPassword/update_request.php";
+
+  static const addAlert = "$hostConnectAlert/add.php";
+  static const readAlert = "$hostConnectAlert/read.php";
+  static const updateAlert = "$hostConnectAlert/update.php";
 }

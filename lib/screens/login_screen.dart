@@ -36,9 +36,8 @@ class _LoginScreenState extends State<LoginScreen> {
         if (resBodyOfLogin['success'] == true) {
           Fluttertoast.showToast(msg: "Successfully logged in");
           User userInfo = User.fromJson(resBodyOfLogin["userData"]);
-
-          await RememberUserPrefs.storeUserInfo(userInfo);
-          Future.delayed(const Duration(milliseconds: 2000), () {
+          RememberUserPrefs.storeUserInfo(userInfo);
+          Future.delayed(Duration(milliseconds: 2000), () {
             Get.to(DashboardOfFragments());
           });
         } else {

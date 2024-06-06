@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:password_manager/fragments/dashboard_of_fragments.dart';
 import 'package:password_manager/screens/login_screen.dart';
-import 'package:password_manager/screens/signup_screen.dart';
 import 'package:password_manager/user_preferences/userPreferences.dart';
 
 void main() {

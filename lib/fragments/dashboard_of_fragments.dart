@@ -15,7 +15,7 @@ class DashboardOfFragments extends StatelessWidget {
     SharedFragmentScreen(),
     SecurityFragmentScreen(),
     AlertFragmentScreen(),
-    SettingsFragmentScreen()
+    SettingsFragmentScreen(),
   ];
   final List _navigationButtonsProperties = [
     {
@@ -45,7 +45,8 @@ class DashboardOfFragments extends StatelessWidget {
     },
   ];
 
-  RxInt _indexNumber = 0.obs;
+  RxInt _indexNumber = 1.obs;
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder(

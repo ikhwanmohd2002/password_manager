@@ -1,14 +1,15 @@
 import 'dart:convert';
 
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
-import 'package:password_manager/fragments/dashboard_of_fragments.dart';
 import 'package:password_manager/model/password.dart';
+import 'package:password_manager/model/user.dart';
 import 'package:password_manager/screens/add_password_screen.dart';
 import 'package:password_manager/screens/edit_password_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
@@ -28,6 +29,8 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
   List<RxBool> isObsecureV2 = [];
   final List<String> items = ['Update', 'Share', 'Delete'];
   String? selectedValue;
+  var formKey = GlobalKey<FormState>();
+  TextEditingController sharedEmailController = TextEditingController();
 
   final List<IconData> icons = [Icons.edit, Icons.share, Icons.delete];
   final List<Color> colors = [Colors.blue, Colors.green, Colors.red];
@@ -47,7 +50,6 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
       if (res.statusCode == 200) {
         var resBodyOfUpdateLastRetrieved = await jsonDecode(res.body);
         if (resBodyOfUpdateLastRetrieved['success'] == true) {
-          Fluttertoast.showToast(msg: "Updated last retrived");
         } else {
           Fluttertoast.showToast(msg: "An error has occured, try again");
         }
@@ -96,6 +98,8 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
           var resBodyOfDeletePassword = await jsonDecode(res.body);
           if (resBodyOfDeletePassword['success'] == true) {
             Fluttertoast.showToast(msg: "Deleted password");
+            getPassword(searchController.text);
+            setState(() {});
           } else {
             Fluttertoast.showToast(msg: "An error has occured, try again");
           }
@@ -107,11 +111,13 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
     }
   }
 
-  Future<List<Password>> getPassword() async {
+  Future<List<Password>> getPassword(String? typedKeyWords) async {
     List<Password> listOfPassword = [];
     try {
-      var res = await http.post(Uri.parse(API.readPassword),
-          body: {"user_id": currentOnlineUser.user.user_id.toString()});
+      var res = await http.post(Uri.parse(API.readPassword), body: {
+        "user_id": currentOnlineUser.user.user_id.toString(),
+        "typedKeyWords": typedKeyWords ?? ""
+      });
 
       if (res.statusCode == 200) {
         var responseBodyOfReadPassword = jsonDecode(res.body);
@@ -131,11 +137,108 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
     return listOfPassword;
   }
 
+  sendPassword(int password_id) async {
+    try {
+      var resultResponse = await Get.dialog(AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text(
+          "Share Password",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: sharedEmailController,
+            validator: (value) {
+              if (value == "") {
+                return "Please write email";
+              } else if (EmailValidator.validate(value!) == false) {
+                return "Please write valid email";
+              } else {
+                return null;
+              }
+            },
+            decoration: InputDecoration(hintText: "name@example.com"),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () {
+                sharedEmailController.clear();
+                Get.back();
+              },
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.blue),
+              )),
+          TextButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  Future.delayed(Duration(milliseconds: 1000), () {
+                    Get.back(result: "sendRequestEmail");
+                  });
+                }
+              },
+              child: const Text(
+                "Share",
+                style: TextStyle(color: Colors.red),
+              ))
+        ],
+      ));
+      User sharedUser = User(0, "", "", "");
+      if (resultResponse == "sendRequestEmail") {
+        var res =
+            await http.post(Uri.parse(API.validateSharedPasswordEmail), body: {
+          'user_email': sharedEmailController.text.trim(),
+          'own_email': currentOnlineUser.user.user_email.toString(),
+        });
+
+        if (res.statusCode == 200) {
+          var resBodyOfValidateEmail = jsonDecode(res.body);
+          if (resBodyOfValidateEmail['emailFound'] == true) {
+            sharedUser = User.fromJson(resBodyOfValidateEmail["userData"]);
+            var res1 = await http.post(Uri.parse(API.addSharedPassword), body: {
+              'password_id': password_id.toString(),
+              'user_id': currentOnlineUser.user.user_id.toString(),
+              'shared_user_id': sharedUser.user_id.toString(),
+              'status': "pending",
+            });
+            if (res1.statusCode == 200) {
+              var resBodyOfSendPassword = await jsonDecode(res1.body);
+              if (resBodyOfSendPassword['success'] == true) {
+                var res2 = await http.post(Uri.parse(API.addAlert), body: {
+                  'user_id': sharedUser.user_id.toString(),
+                  'status': "new",
+                  'type': "shared_password",
+                  'description':
+                      '${currentOnlineUser.user.user_email.toString()} has requested you to accept shared password'
+                });
+                if (res2.statusCode == 200) {
+                  var resBodyOfAddAlert = await jsonDecode(res2.body);
+                  if (resBodyOfAddAlert['success'] == true) {}
+                }
+                Fluttertoast.showToast(msg: "Request Sent");
+                sharedEmailController.clear();
+              } else {
+                Fluttertoast.showToast(msg: "An error has occured, try again");
+              }
+            }
+          } else {
+            Fluttertoast.showToast(msg: "Email not found");
+            sharedEmailController.clear();
+          }
+        }
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: e.toString());
+      print(e);
+    }
+  }
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    getPassword();
+    getPassword("");
   }
 
   @override
@@ -153,7 +256,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
               height: 24,
             ),
             FutureBuilder(
-                future: getPassword(),
+                future: getPassword(searchController.text),
                 builder: (context, AsyncSnapshot<List<Password>> dataSnapShot) {
                   if (dataSnapShot.connectionState == ConnectionState.waiting) {
                     return const Center(
@@ -338,16 +441,13 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
                                                   passwordInfo: eachPassword,
                                                 ));
                                               } else if (value == "Share") {
+                                                sendPassword(
+                                                    eachPassword.password_id ??
+                                                        0);
                                               } else {
                                                 deletePassword(
                                                     eachPassword.password_id ??
                                                         0);
-                                                Future.delayed(
-                                                    const Duration(
-                                                        milliseconds: 2000),
-                                                    () {
-                                                  setState(() {});
-                                                });
                                               }
                                             },
                                             buttonStyleData:
@@ -436,7 +536,8 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
             hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
             prefixIcon: IconButton(
               onPressed: () {
-                //Get.to(SearchItems(typedKeyWords: searchController.text));
+                getPassword(searchController.text);
+                setState(() {});
               },
               icon: Icon(Icons.search, color: primary1Color),
             )),

@@ -9,7 +9,7 @@ class SettingsFragmentScreen extends StatelessWidget {
 
   signOutUser() async {
     var resultResponse = await Get.dialog(AlertDialog(
-      backgroundColor: Colors.grey,
+      backgroundColor: Colors.white,
       title: const Text(
         "Logout",
         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -22,7 +22,7 @@ class SettingsFragmentScreen extends StatelessWidget {
             },
             child: const Text(
               "No",
-              style: TextStyle(color: Colors.black),
+              style: TextStyle(color: Colors.blue),
             )),
         TextButton(
             onPressed: () {
@@ -30,13 +30,13 @@ class SettingsFragmentScreen extends StatelessWidget {
             },
             child: const Text(
               "Yes",
-              style: TextStyle(color: Colors.black),
+              style: TextStyle(color: Colors.red),
             ))
       ],
     ));
 
     if (resultResponse == "loggedOut") {
-      RememberUserPrefs.removeUserInfo().then((value) {
+      await RememberUserPrefs.removeUserInfo().then((value) {
         Get.off(LoginScreen());
       });
     }
@@ -71,12 +71,6 @@ class SettingsFragmentScreen extends StatelessWidget {
     return ListView(
       padding: EdgeInsets.all(32),
       children: [
-        Center(
-          child: Image.asset(
-            "images/man.png",
-            width: 240,
-          ),
-        ),
         const SizedBox(
           height: 20,
         ),
