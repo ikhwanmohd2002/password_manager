@@ -181,7 +181,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
               },
               child: const Text(
                 "Share",
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.green),
               ))
         ],
       ));

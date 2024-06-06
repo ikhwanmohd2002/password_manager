@@ -18,6 +18,7 @@ class API {
 
   static const addSharedPassword = "$hostConnectSharedPassword/add.php";
   static const readSharedPassword = "$hostConnectSharedPassword/read.php";
+  static const deleteSharedPassword = "$hostConnectSharedPassword/delete.php";
   static const validateSharedPasswordEmail =
       "$hostConnectSharedPassword/validate_email.php";
   static const getPendingSharedPassword =

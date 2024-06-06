@@ -34,6 +34,57 @@ class _SharedFragmentScreenState extends State<SharedFragmentScreen> {
     }
   }
 
+  deleteSharedPassword(int shared_password_id) async {
+    try {
+      var resultResponse = await Get.dialog(AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text(
+          "Delete Shared Password",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        content: const Text("Are you sure\nYou want to delete password?"),
+        actions: [
+          TextButton(
+              onPressed: () {
+                Get.back();
+              },
+              child: const Text(
+                "No",
+                style: TextStyle(color: Colors.blue),
+              )),
+          TextButton(
+              onPressed: () {
+                Get.back(result: "deleted");
+              },
+              child: const Text(
+                "Yes",
+                style: TextStyle(color: Colors.red),
+              ))
+        ],
+      ));
+
+      if (resultResponse == "deleted") {
+        var res = await http.post(Uri.parse(API.deleteSharedPassword), body: {
+          'shared_password_id': shared_password_id.toString(),
+        });
+
+        if (res.statusCode == 200) {
+          var resBodyOfDeleteSharedPassword = await jsonDecode(res.body);
+          if (resBodyOfDeleteSharedPassword['success'] == true) {
+            Fluttertoast.showToast(msg: "Deleted shared password");
+            getSharedPassword();
+            setState(() {});
+          } else {
+            Fluttertoast.showToast(msg: "An error has occured, try again");
+          }
+        }
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: e.toString());
+      print(e);
+    }
+  }
+
   updateRequest(int shared_password_id, bool isApproved) async {
     try {
       var res = await http.post(Uri.parse(API.updateRequest), body: {
@@ -469,55 +520,15 @@ class _SharedFragmentScreenState extends State<SharedFragmentScreen> {
                                 const SizedBox(
                                   width: 10,
                                 ),
-                                DropdownButtonHideUnderline(
-                                  child: DropdownButton2<String>(
-                                    customButton: const Icon(
-                                      Icons.menu,
-                                      size: 20,
-                                    ),
-                                    items: items
-                                        .map((String item) => DropdownMenuItem(
-                                              value: item,
-                                              child: Icon(
-                                                icons[items.indexOf(item)],
-                                                size: 20,
-                                                color:
-                                                    colors[items.indexOf(item)],
-                                              ),
-                                            ))
-                                        .toList(),
-                                    value: selectedValue,
-                                    onChanged: (String? value) {
-                                      if (value == "Update") {
-                                        // Get.to(EditPasswordScreen(
-                                        //   passwordInfo: eachPassword,
-                                        // ));
-                                      } else if (value == "Share") {
-                                        // sendPassword(
-                                        //     eachPassword.password_id ??
-                                        //         0);
-                                      } else {
-                                        // deletePassword(
-                                        //     eachPassword.password_id ??
-                                        //         0);
-                                      }
-                                    },
-                                    buttonStyleData: const ButtonStyleData(
-                                      height: 40,
-                                      width: 45,
-                                    ),
-                                    dropdownStyleData: DropdownStyleData(
-                                      maxHeight: 200,
-                                      width: 50,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        color: Colors.white,
-                                      ),
-                                      offset: const Offset(-10, 0),
-                                    ),
-                                    menuItemStyleData: const MenuItemStyleData(
-                                      height: 40,
-                                    ),
+                                GestureDetector(
+                                  onTap: () async {
+                                    deleteSharedPassword(
+                                        eachSharedPassword.shared_password_id!);
+                                  },
+                                  child: const Icon(
+                                    Icons.delete,
+                                    size: 20,
+                                    color: Colors.red,
                                   ),
                                 ),
                               ],
@@ -531,11 +542,18 @@ class _SharedFragmentScreenState extends State<SharedFragmentScreen> {
               },
             );
           } else {
-            return const Center(
-              child: Text(
-                "Empty, No Data",
-                style: TextStyle(color: Colors.grey),
-              ),
+            return const Column(
+              children: [
+                SizedBox(
+                  height: 24,
+                ),
+                Center(
+                  child: Text(
+                    "No shared password found",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ],
             );
           }
         });
