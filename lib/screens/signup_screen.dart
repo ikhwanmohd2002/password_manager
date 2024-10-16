@@ -21,12 +21,15 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   var formKey = GlobalKey<FormState>();
-  var nameController = TextEditingController();
+  var usernameController = TextEditingController();
   var emailController = TextEditingController();
-  var masterPasswordController = TextEditingController();
+  var passwordController1 = TextEditingController();
+  var passwordController2 = TextEditingController();
   var isObsecure = true.obs;
+  var isObsecure2 = true.obs;
 
   final passNotifier = ValueNotifier<PasswordStrength?>(null);
+  final passNotifier1 = ValueNotifier<CustomPassStrength?>(null);
 
   validateUserEmail() async {
     try {
@@ -50,9 +53,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   registerAndSaveUserRecord() async {
     User userModel = User(
       1,
-      nameController.text.trim(),
+      usernameController.text.trim(),
       emailController.text.trim(),
-      masterPasswordController.text.trim(),
+      passwordController1.text.trim(),
     );
 
     try {
@@ -64,9 +67,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         if (resBodyOfSignUp['success'] == true) {
           Fluttertoast.showToast(msg: "You have successfully registered");
           setState(() {
-            nameController.clear();
+            usernameController.clear();
             emailController.clear();
-            masterPasswordController.clear();
+            passwordController1.clear();
           });
           Future.delayed(const Duration(milliseconds: 2000), () {
             Get.to(const LoginScreen());
@@ -88,7 +91,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           child: Column(
             children: <Widget>[
               Container(
-                height: 300,
+                height: 150,
                 decoration: const BoxDecoration(
                     image: DecorationImage(
                         image: AssetImage('images/background.png'),
@@ -98,7 +101,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     Positioned(
                       left: 30,
                       width: 80,
-                      height: 200,
+                      height: 150,
                       child: FadeInUp(
                           duration: const Duration(seconds: 1),
                           child: Container(
@@ -121,7 +124,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     Positioned(
                       right: 40,
-                      top: 40,
+                      top: 10,
                       width: 80,
                       height: 150,
                       child: FadeInUp(
@@ -181,13 +184,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                           bottom: BorderSide(
                                               color: primary1Color))),
                                   child: TextFormField(
-                                    controller: nameController,
+                                    controller: usernameController,
                                     validator: (value) => value == ""
-                                        ? "Please write name"
+                                        ? "Please write username"
                                         : null,
                                     decoration: InputDecoration(
                                         border: InputBorder.none,
-                                        hintText: "Name",
+                                        hintText: "Username",
                                         hintStyle:
                                             TextStyle(color: Colors.grey[700])),
                                   ),
@@ -220,26 +223,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                                 Container(
                                   padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                      border: Border(
+                                          bottom: BorderSide(
+                                              color: primary1Color))),
                                   child: Obx(
                                     () => TextFormField(
-                                      controller: masterPasswordController,
+                                      controller: passwordController1,
                                       obscureText: isObsecure.value,
                                       onChanged: (value) {
-                                        passNotifier.value =
-                                            PasswordStrength.calculate(
+                                        passNotifier1.value =
+                                            CustomPassStrength.calculate(
                                                 text: value);
                                       },
                                       validator: (value) {
                                         if (value == "") {
-                                          return "Please enter master password";
-                                        }
-                                        if (PasswordStrength.calculate(
+                                          return "Please enter password";
+                                        } else if (CustomPassStrength.calculate(
                                                 text: value!) ==
-                                            PasswordStrength.weak) {
+                                            CustomPassStrength.weak) {
                                           return "Please enter at least strong password";
-                                        } else if (PasswordStrength.calculate(
+                                        } else if (CustomPassStrength.calculate(
                                                 text: value) ==
-                                            PasswordStrength.medium) {
+                                            CustomPassStrength.medium) {
                                           return "Please enter at least strong password";
                                         } else {
                                           return null;
@@ -259,7 +265,41 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                                 ),
                                               )),
                                           border: InputBorder.none,
-                                          hintText: "Master Password",
+                                          hintText: "Password",
+                                          hintStyle: TextStyle(
+                                              color: Colors.grey[700])),
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Obx(
+                                    () => TextFormField(
+                                      controller: passwordController2,
+                                      obscureText: isObsecure2.value,
+                                      validator: (value) {
+                                        if (value == "" ||
+                                            value !=
+                                                passwordController1.text
+                                                    .trim()) {
+                                          return "Please reenter password";
+                                        }
+                                      },
+                                      decoration: InputDecoration(
+                                          suffixIcon: Obx(() => GestureDetector(
+                                                onTap: () {
+                                                  isObsecure2.value =
+                                                      !isObsecure2.value;
+                                                },
+                                                child: Icon(
+                                                  isObsecure2.value
+                                                      ? Icons.visibility_off
+                                                      : Icons.visibility,
+                                                  color: Colors.black,
+                                                ),
+                                              )),
+                                          border: InputBorder.none,
+                                          hintText: "Confirm Password",
                                           hintStyle: TextStyle(
                                               color: Colors.grey[700])),
                                     ),
@@ -270,12 +310,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         )),
                     const SizedBox(
-                      height: 30,
+                      height: 10,
                     ),
                     FadeInUp(
                       duration: const Duration(milliseconds: 1800),
                       child: PasswordStrengthChecker(
-                        strength: passNotifier,
+                        strength: passNotifier1,
                       ),
                     ),
                     FadeInUp(
@@ -283,7 +323,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          PasswordStrength.instructions,
+                          CustomPassStrength.instructions,
                         ),
                       ),
                     ),
@@ -299,7 +339,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             }
                           },
                           child: Container(
-                            height: 50,
+                            height: 40,
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),
                                 gradient: LinearGradient(colors: [

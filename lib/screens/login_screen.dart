@@ -61,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
         'user_name': nameController1.text.trim(),
         'user_master_password': passwordController1.text.trim()
       };
-      var res = await http.post(Uri.parse(API.hostConnectUserAPI),
+      var res = await http.post(Uri.parse(API.hostConnectDjango),
           body: jsonEncode(body1));
 
       if (res.statusCode == 200) {
