@@ -1,5 +1,5 @@
 class API {
-  static const hostConnect = "http://192.168.1.115/api_password_manager";
+  static const hostConnect = "http://192.168.1.118/api_password_manager";
   static const hostConnectUser = "$hostConnect/user";
   static const hostConnectPassword = "$hostConnect/password";
   static const hostConnectSharedPassword = "$hostConnect/shared_password";
@@ -28,4 +28,7 @@ class API {
   static const addAlert = "$hostConnectAlert/add.php";
   static const readAlert = "$hostConnectAlert/read.php";
   static const updateAlert = "$hostConnectAlert/update.php";
+
+  static const hostConnectAPI = "http://192.168.1.127:8000/api";
+  static const hostConnectUserAPI = "$hostConnectAPI/user";
 }

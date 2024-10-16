@@ -24,6 +24,11 @@ class _LoginScreenState extends State<LoginScreen> {
   var emailController = TextEditingController();
   var passwordController = TextEditingController();
 
+  var formKey1 = GlobalKey<FormState>();
+  var nameController1 = TextEditingController();
+  var emailController1 = TextEditingController();
+  var passwordController1 = TextEditingController();
+
   loginUserNow() async {
     try {
       var res = await http.post(Uri.parse(API.login), body: {
@@ -45,6 +50,35 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
+      Fluttertoast.showToast(msg: e.toString());
+    }
+  }
+
+  testAPI() async {
+    try {
+      var body1 = {
+        'user_email': emailController1.text.trim(),
+        'user_name': nameController1.text.trim(),
+        'user_master_password': passwordController1.text.trim()
+      };
+      var res = await http.post(Uri.parse(API.hostConnectUserAPI),
+          body: jsonEncode(body1));
+
+      if (res.statusCode == 200) {
+        var resBodyOfLogin = jsonDecode(res.body);
+        if (resBodyOfLogin['success'] == true) {
+          Fluttertoast.showToast(msg: "Successfully logged in");
+          //User userInfo = User.fromJson(resBodyOfLogin["userData"]);
+          //RememberUserPrefs.storeUserInfo(userInfo);
+          //Future.delayed(Duration(milliseconds: 2000), () {
+          //  Get.to(DashboardOfFragments());
+          //});
+        } else {
+          Fluttertoast.showToast(msg: "Failed to login. Please Try Again");
+        }
+      }
+    } catch (e) {
+      print(e.toString());
       Fluttertoast.showToast(msg: e.toString());
     }
   }
@@ -223,6 +257,79 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         )),
                   ],
+                ),
+              ),
+              Form(
+                key: formKey1,
+                child: Column(
+                  children: <Widget>[
+                    Container(
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                          border:
+                              Border(bottom: BorderSide(color: primary1Color))),
+                      child: TextFormField(
+                        controller: nameController1,
+                        validator: (value) =>
+                            value == "" ? "Please write name" : null,
+                        decoration: InputDecoration(
+                            border: InputBorder.none,
+                            hintText: "Name",
+                            hintStyle: TextStyle(color: Colors.grey[700])),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                          border:
+                              Border(bottom: BorderSide(color: primary1Color))),
+                      child: TextFormField(
+                        controller: emailController1,
+                        validator: (value) =>
+                            value == "" ? "Please write email" : null,
+                        decoration: InputDecoration(
+                            border: InputBorder.none,
+                            hintText: "Email",
+                            hintStyle: TextStyle(color: Colors.grey[700])),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(8.0),
+                      child: TextFormField(
+                        controller: passwordController1,
+                        obscureText: true,
+                        validator: (value) =>
+                            value == "" ? "Please write master password" : null,
+                        decoration: InputDecoration(
+                            border: InputBorder.none,
+                            hintText: "Master Password",
+                            hintStyle: TextStyle(color: Colors.grey[700])),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: () {
+                  if (formKey1.currentState!.validate()) {
+                    testAPI();
+                  }
+                },
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      gradient: LinearGradient(colors: [
+                        primary2Color,
+                        primary1Color,
+                      ])),
+                  child: const Center(
+                    child: Text(
+                      "Test API",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 ),
               )
             ],
