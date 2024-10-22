@@ -1,5 +1,5 @@
 class API {
-  static const hostConnect = "http://192.168.1.118/api_password_manager";
+  static const hostConnect = "http://192.168.1.152/api_password_manager";
   static const hostConnectUser = "$hostConnect/user";
   static const hostConnectPassword = "$hostConnect/password";
   static const hostConnectSharedPassword = "$hostConnect/shared_password";
