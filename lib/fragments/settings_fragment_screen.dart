@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/screens/login_screen.dart';
+import 'package:password_manager/screens/main_vault_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 import 'package:password_manager/user_preferences/userPreferences.dart';
 
@@ -83,22 +84,46 @@ class SettingsFragmentScreen extends StatelessWidget {
           height: 20,
         ),
         Center(
-          child: Material(
-            color: Colors.redAccent,
-            borderRadius: BorderRadius.circular(8),
-            child: InkWell(
-              onTap: () {
-                signOutUser();
-              },
-              borderRadius: BorderRadius.circular(32),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                child: Text(
-                  "Sign Out",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Material(
+                color: Colors.redAccent,
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  onTap: () {
+                    signOutUser();
+                  },
+                  borderRadius: BorderRadius.circular(32),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    child: Text(
+                      "Sign Out",
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
                 ),
               ),
-            ),
+              Material(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  onTap: () {
+                    Future.delayed(const Duration(milliseconds: 2000), () {
+                      Get.to(const MainVaultScreen());
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(32),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    child: Text(
+                      "Go To Vault",
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         )
       ],

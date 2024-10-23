@@ -23,10 +23,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   var formKey = GlobalKey<FormState>();
   var usernameController = TextEditingController();
   var emailController = TextEditingController();
-  var passwordController1 = TextEditingController();
-  var passwordController2 = TextEditingController();
+  var passwordController = TextEditingController();
   var isObsecure = true.obs;
-  var isObsecure2 = true.obs;
 
   final passNotifier = ValueNotifier<PasswordStrength?>(null);
   final passNotifier1 = ValueNotifier<CustomPassStrength?>(null);
@@ -55,7 +53,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       1,
       usernameController.text.trim(),
       emailController.text.trim(),
-      passwordController1.text.trim(),
+      passwordController.text.trim(),
     );
 
     try {
@@ -69,7 +67,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           setState(() {
             usernameController.clear();
             emailController.clear();
-            passwordController1.clear();
+            passwordController.clear();
           });
           Future.delayed(const Duration(milliseconds: 2000), () {
             Get.to(const LoginScreen());
@@ -223,13 +221,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                                 Container(
                                   padding: const EdgeInsets.all(8.0),
-                                  decoration: BoxDecoration(
-                                      border: Border(
-                                          bottom: BorderSide(
-                                              color: primary1Color))),
                                   child: Obx(
                                     () => TextFormField(
-                                      controller: passwordController1,
+                                      controller: passwordController,
                                       obscureText: isObsecure.value,
                                       onChanged: (value) {
                                         passNotifier1.value =
@@ -266,40 +260,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                               )),
                                           border: InputBorder.none,
                                           hintText: "Password",
-                                          hintStyle: TextStyle(
-                                              color: Colors.grey[700])),
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Obx(
-                                    () => TextFormField(
-                                      controller: passwordController2,
-                                      obscureText: isObsecure2.value,
-                                      validator: (value) {
-                                        if (value == "" ||
-                                            value !=
-                                                passwordController1.text
-                                                    .trim()) {
-                                          return "Please reenter password";
-                                        }
-                                      },
-                                      decoration: InputDecoration(
-                                          suffixIcon: Obx(() => GestureDetector(
-                                                onTap: () {
-                                                  isObsecure2.value =
-                                                      !isObsecure2.value;
-                                                },
-                                                child: Icon(
-                                                  isObsecure2.value
-                                                      ? Icons.visibility_off
-                                                      : Icons.visibility,
-                                                  color: Colors.black,
-                                                ),
-                                              )),
-                                          border: InputBorder.none,
-                                          hintText: "Confirm Password",
                                           hintStyle: TextStyle(
                                               color: Colors.grey[700])),
                                     ),
