@@ -29,7 +29,7 @@ class API {
   static const readAlert = "$hostConnectAlert/read.php";
   static const updateAlert = "$hostConnectAlert/update.php";
 
-  static const hostConnectDjango = "http://192.168.1.100:8000";
+  static const hostConnectDjango = "http://192.168.1.132:8000";
 
-  static const signUpDjango = "$hostConnectDjango/dj-rest-auth/registration/";
+  static const testAI = "$hostConnectDjango/api/user/predict_login";
 }
