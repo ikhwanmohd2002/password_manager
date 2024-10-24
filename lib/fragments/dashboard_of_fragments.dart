@@ -6,6 +6,7 @@ import 'package:password_manager/fragments/home_fragment_screen.dart';
 import 'package:password_manager/fragments/security_fragment_screen.dart';
 import 'package:password_manager/fragments/alert_fragment_screen.dart';
 import 'package:password_manager/fragments/settings_fragment_screen.dart';
+import 'package:password_manager/fragments/vault_fragment_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 
 class DashboardOfFragments extends StatelessWidget {
@@ -16,6 +17,7 @@ class DashboardOfFragments extends StatelessWidget {
     SecurityFragmentScreen(),
     AlertFragmentScreen(),
     SettingsFragmentScreen(),
+    VaultFragmentScreen(),
   ];
   final List _navigationButtonsProperties = [
     {
@@ -43,6 +45,11 @@ class DashboardOfFragments extends StatelessWidget {
       "non_active_icon": Icons.settings_outlined,
       "label": "Settings"
     },
+    {
+      "active_icon": Icons.security,
+      "non_active_icon": Icons.security_outlined,
+      "label": "Volt"
+    },
   ];
 
   RxInt _indexNumber = 0.obs;
@@ -68,7 +75,7 @@ class DashboardOfFragments extends StatelessWidget {
                 showUnselectedLabels: true,
                 selectedItemColor: Colors.white,
                 unselectedItemColor: Colors.white24,
-                items: List.generate(5, (index) {
+                items: List.generate(6, (index) {
                   var navBtnProperty = _navigationButtonsProperties[index];
                   return BottomNavigationBarItem(
                       backgroundColor: primary1Color,

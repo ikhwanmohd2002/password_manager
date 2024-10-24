@@ -145,11 +145,6 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                                   validator: (value) {
                                     if (value == "") {
                                       return "Please enter password";
-                                    }
-                                    if (PasswordStrength.calculate(
-                                            text: value!) ==
-                                        PasswordStrength.weak) {
-                                      return "Please enter at least medium password";
                                     } else {
                                       return null;
                                     }
