@@ -51,7 +51,7 @@ class _AlertFragmentScreenState extends State<AlertFragmentScreen> {
     List<Alert> alertListOfCurrentUser = [];
     try {
       var res = await http.post(Uri.parse(API.readAlert),
-          body: {"user_id": currentOnlineUser.user.user_id.toString()});
+          body: {"user_id": currentOnlineUser.user.id.toString()});
 
       if (res.statusCode == 200) {
         var responseBodyOfReadAlert = jsonDecode(res.body);

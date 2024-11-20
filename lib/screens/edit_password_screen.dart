@@ -38,7 +38,7 @@ class _AddPasswordScreenState extends State<EditPasswordScreen> {
   editPassword() async {
     Password passwordModel = Password(
       password_id: widget.passwordInfo!.password_id,
-      user_id: currentUser.user.user_id,
+      user_id: currentUser.user.id,
       password_title: titleController.text.trim(),
       website_url: urlController.text.trim(),
       password_content: passwordController.text.trim(),

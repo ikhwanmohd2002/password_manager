@@ -75,7 +75,7 @@ class _VaultFragmentScreenState extends State<VaultFragmentScreen> {
               decoration: BoxDecoration(
                   color: primary1Color,
                   borderRadius: BorderRadius.circular(20)),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [

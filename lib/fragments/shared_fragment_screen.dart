@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -111,7 +110,7 @@ class _SharedFragmentScreenState extends State<SharedFragmentScreen> {
 
     try {
       var res = await http.post(Uri.parse(API.getPendingSharedPassword), body: {
-        'shared_user_id': currentOnlineUser.user.user_id.toString(),
+        'shared_user_id': currentOnlineUser.user.id.toString(),
         'status': "pending"
       });
 
@@ -137,7 +136,7 @@ class _SharedFragmentScreenState extends State<SharedFragmentScreen> {
 
     try {
       var res = await http.post(Uri.parse(API.readSharedPassword), body: {
-        'shared_user_id': currentOnlineUser.user.user_id.toString(),
+        'shared_user_id': currentOnlineUser.user.id.toString(),
         'status': "approved"
       });
 

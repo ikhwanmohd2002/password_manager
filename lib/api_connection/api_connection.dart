@@ -32,4 +32,12 @@ class API {
   static const hostConnectDjango = "http://192.168.1.132:8000";
 
   static const testAI = "$hostConnectDjango/api/user/predict_login";
+
+  static const hostConnectIntelliVault = "http://10.0.2.2:8000";
+  static const registerIntelliVault =
+      "$hostConnectIntelliVault/dj-rest-auth/registration/";
+  static const loginIntelliVault =
+      "$hostConnectIntelliVault/dj-rest-auth/login/";
+  static const userDetailsIntelliVault =
+      "$hostConnectIntelliVault/dj-rest-auth/user/";
 }

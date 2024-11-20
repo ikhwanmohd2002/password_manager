@@ -32,7 +32,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
   addPassword() async {
     Password passwordModel = Password(
       password_id: 1,
-      user_id: currentUser.user.user_id,
+      user_id: currentUser.user.id,
       password_title: titleController.text.trim(),
       website_url: urlController.text.trim(),
       password_content: passwordController.text.trim(),

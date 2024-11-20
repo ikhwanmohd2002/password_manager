@@ -21,36 +21,42 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   var formKey = GlobalKey<FormState>();
+  var usernameController = TextEditingController();
   var emailController = TextEditingController();
   var passwordController = TextEditingController();
 
-  var formKey1 = GlobalKey<FormState>();
-  var nameController1 = TextEditingController();
-  var emailController1 = TextEditingController();
-  var passwordController1 = TextEditingController();
-
   loginUserNow() async {
     try {
-      var res = await http.post(Uri.parse(API.login), body: {
-        'user_email': emailController.text.trim(),
-        'user_master_password': passwordController.text.trim()
+      var res = await http.post(Uri.parse(API.loginIntelliVault), body: {
+        'username': usernameController.text.trim(),
+        'email': emailController.text.trim(),
+        'password': passwordController.text.trim()
       });
 
       if (res.statusCode == 200) {
         var resBodyOfLogin = jsonDecode(res.body);
-        if (resBodyOfLogin['success'] == true) {
-          Fluttertoast.showToast(msg: "Successfully logged in");
-          User userInfo = User.fromJson(resBodyOfLogin["userData"]);
-          RememberUserPrefs.storeUserInfo(userInfo);
-          Future.delayed(Duration(milliseconds: 2000), () {
-            Get.to(DashboardOfFragments());
-          });
-        } else {
-          Fluttertoast.showToast(msg: "Failed to login. Please Try Again");
-        }
+        Fluttertoast.showToast(msg: "Successfully logged in");
+        String token = resBodyOfLogin['key'];
+        var res1 = await http.get(
+          Uri.parse(API.userDetailsIntelliVault),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Token $token'
+          },
+        );
+        var resBodyOfUserDetails = jsonDecode(res1.body);
+        int pk = resBodyOfUserDetails['pk'];
+        User userInfo = User(pk, usernameController.text.trim(),
+            emailController.text.trim(), '', '');
+        RememberUserPrefs.storeUserInfo(userInfo);
+        RememberUserPrefs.storeToken(token);
+        Future.delayed(Duration(milliseconds: 2000), () {
+          Get.to(DashboardOfFragments());
+        });
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
+      Fluttertoast.showToast(msg: "Failed to login. Please Try Again");
+      print(e.toString());
     }
   }
 
@@ -178,6 +184,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                           bottom: BorderSide(
                                               color: primary1Color))),
                                   child: TextFormField(
+                                    controller: usernameController,
+                                    validator: (value) => value == ""
+                                        ? "Please write username"
+                                        : null,
+                                    decoration: InputDecoration(
+                                        border: InputBorder.none,
+                                        hintText: "Username",
+                                        hintStyle:
+                                            TextStyle(color: Colors.grey[700])),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                      border: Border(
+                                          bottom: BorderSide(
+                                              color: primary1Color))),
+                                  child: TextFormField(
                                     controller: emailController,
                                     validator: (value) => value == ""
                                         ? "Please write email"
@@ -195,11 +219,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                     controller: passwordController,
                                     obscureText: true,
                                     validator: (value) => value == ""
-                                        ? "Please write master password"
+                                        ? "Please write password"
                                         : null,
                                     decoration: InputDecoration(
                                         border: InputBorder.none,
-                                        hintText: "Master Password",
+                                        hintText: "Password",
                                         hintStyle:
                                             TextStyle(color: Colors.grey[700])),
                                   ),

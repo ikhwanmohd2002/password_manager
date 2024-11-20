@@ -60,6 +60,7 @@ class DashboardOfFragments extends StatelessWidget {
       init: CurrentUser(),
       initState: (currentState) {
         _rememberCurrentUser.getUserInfo();
+        _rememberCurrentUser.getToken();
       },
       builder: (controller) {
         return Scaffold(

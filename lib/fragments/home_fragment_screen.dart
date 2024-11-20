@@ -115,7 +115,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
     List<Password> listOfPassword = [];
     try {
       var res = await http.post(Uri.parse(API.readPassword), body: {
-        "user_id": currentOnlineUser.user.user_id.toString(),
+        "user_id": currentOnlineUser.user.id.toString(),
         "typedKeyWords": typedKeyWords ?? ""
       });
 
@@ -185,12 +185,12 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
               ))
         ],
       ));
-      User sharedUser = User(0, "", "", "");
+      User sharedUser = User(0, "", "", "", "");
       if (resultResponse == "sendRequestEmail") {
         var res =
             await http.post(Uri.parse(API.validateSharedPasswordEmail), body: {
           'user_email': sharedEmailController.text.trim(),
-          'own_email': currentOnlineUser.user.user_email.toString(),
+          'own_email': currentOnlineUser.user.email.toString(),
         });
 
         if (res.statusCode == 200) {
@@ -199,19 +199,19 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
             sharedUser = User.fromJson(resBodyOfValidateEmail["userData"]);
             var res1 = await http.post(Uri.parse(API.addSharedPassword), body: {
               'password_id': password_id.toString(),
-              'user_id': currentOnlineUser.user.user_id.toString(),
-              'shared_user_id': sharedUser.user_id.toString(),
+              'user_id': currentOnlineUser.user.id.toString(),
+              'shared_user_id': sharedUser.id.toString(),
               'status': "pending",
             });
             if (res1.statusCode == 200) {
               var resBodyOfSendPassword = await jsonDecode(res1.body);
               if (resBodyOfSendPassword['success'] == true) {
                 var res2 = await http.post(Uri.parse(API.addAlert), body: {
-                  'user_id': sharedUser.user_id.toString(),
+                  'user_id': sharedUser.id.toString(),
                   'status': "new",
                   'type': "shared_password",
                   'description':
-                      '${currentOnlineUser.user.user_email.toString()} has requested you to accept shared password'
+                      '${currentOnlineUser.user.id.toString()} has requested you to accept shared password'
                 });
                 if (res2.statusCode == 200) {
                   var resBodyOfAddAlert = await jsonDecode(res2.body);

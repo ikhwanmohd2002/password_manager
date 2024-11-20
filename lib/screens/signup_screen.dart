@@ -24,29 +24,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
   var usernameController = TextEditingController();
   var emailController = TextEditingController();
   var passwordController = TextEditingController();
-  var isObsecure = true.obs;
+  var password2Controller = TextEditingController();
+  List<RxBool> isObsecure = [true.obs, true.obs];
 
   final passNotifier = ValueNotifier<PasswordStrength?>(null);
   final passNotifier1 = ValueNotifier<CustomPassStrength?>(null);
-
-  validateUserEmail() async {
-    try {
-      var res = await http.post(Uri.parse(API.validateEmail),
-          body: {'user_email': emailController.text.trim()});
-
-      if (res.statusCode == 200) {
-        var resBodyOfValidateEmail = jsonDecode(res.body);
-        if (resBodyOfValidateEmail['emailFound'] == true) {
-          Fluttertoast.showToast(
-              msg: "Email already in use. Try another email.");
-        } else {
-          registerAndSaveUserRecord();
-        }
-      }
-    } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
-    }
-  }
 
   registerAndSaveUserRecord() async {
     User userModel = User(
@@ -54,29 +36,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
       usernameController.text.trim(),
       emailController.text.trim(),
       passwordController.text.trim(),
+      password2Controller.text.trim(),
     );
 
     try {
-      var res =
-          await http.post(Uri.parse(API.signUp), body: userModel.toJson());
+      print(userModel.toJson());
+      var res = await http.post(Uri.parse(API.registerIntelliVault),
+          body: userModel.toJson());
 
-      if (res.statusCode == 200) {
-        var resBodyOfSignUp = await jsonDecode(res.body);
-        if (resBodyOfSignUp['success'] == true) {
-          Fluttertoast.showToast(msg: "You have successfully registered");
-          setState(() {
-            usernameController.clear();
-            emailController.clear();
-            passwordController.clear();
-          });
-          Future.delayed(const Duration(milliseconds: 2000), () {
-            Get.to(const LoginScreen());
-          });
-        } else {
-          Fluttertoast.showToast(msg: "An error has occured, try again");
-        }
-      }
+      if (res.statusCode == 204)
+        Fluttertoast.showToast(msg: "You have successfully registered");
+      setState(() {
+        usernameController.clear();
+        emailController.clear();
+        passwordController.clear();
+        password2Controller.clear();
+      });
+      Future.delayed(const Duration(milliseconds: 2000), () {
+        Get.to(const LoginScreen());
+      });
     } catch (e) {
+      print(e);
       Fluttertoast.showToast(msg: e.toString());
     }
   }
@@ -221,10 +201,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                                 Container(
                                   padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                      border: Border(
+                                          bottom: BorderSide(
+                                              color: primary1Color))),
                                   child: Obx(
                                     () => TextFormField(
                                       controller: passwordController,
-                                      obscureText: isObsecure.value,
+                                      obscureText: isObsecure[0].value,
                                       onChanged: (value) {
                                         passNotifier1.value =
                                             CustomPassStrength.calculate(
@@ -248,11 +232,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       decoration: InputDecoration(
                                           suffixIcon: Obx(() => GestureDetector(
                                                 onTap: () {
-                                                  isObsecure.value =
-                                                      !isObsecure.value;
+                                                  isObsecure[0].value =
+                                                      !isObsecure[0].value;
                                                 },
                                                 child: Icon(
-                                                  isObsecure.value
+                                                  isObsecure[0].value
                                                       ? Icons.visibility_off
                                                       : Icons.visibility,
                                                   color: Colors.black,
@@ -260,6 +244,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                               )),
                                           border: InputBorder.none,
                                           hintText: "Password",
+                                          hintStyle: TextStyle(
+                                              color: Colors.grey[700])),
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Obx(
+                                    () => TextFormField(
+                                      controller: password2Controller,
+                                      obscureText: isObsecure[1].value,
+                                      onChanged: (value) {
+                                        passNotifier1.value =
+                                            CustomPassStrength.calculate(
+                                                text: value);
+                                      },
+                                      decoration: InputDecoration(
+                                          suffixIcon: Obx(() => GestureDetector(
+                                                onTap: () {
+                                                  isObsecure[1].value =
+                                                      !isObsecure[1].value;
+                                                },
+                                                child: Icon(
+                                                  isObsecure[1].value
+                                                      ? Icons.visibility_off
+                                                      : Icons.visibility,
+                                                  color: Colors.black,
+                                                ),
+                                              )),
+                                          border: InputBorder.none,
+                                          hintText: "Confirm Password",
                                           hintStyle: TextStyle(
                                               color: Colors.grey[700])),
                                     ),
@@ -295,7 +310,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         child: InkWell(
                           onTap: () {
                             if (formKey.currentState!.validate()) {
-                              validateUserEmail();
+                              registerAndSaveUserRecord();
                             }
                           },
                           child: Container(

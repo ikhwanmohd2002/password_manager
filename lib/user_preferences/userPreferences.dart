@@ -10,6 +10,11 @@ class RememberUserPrefs {
     await preferences.setString("currentUser", userJsonData);
   }
 
+  static Future<void> storeToken(String token) async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    await preferences.setString("token", token);
+  }
+
   static Future<User?> readUserInfo() async {
     User? currentUserInfo;
     SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -18,11 +23,25 @@ class RememberUserPrefs {
       Map<String, dynamic> userDataMap = jsonDecode(userInfo);
       currentUserInfo = User.fromJson(userDataMap);
     }
+
     return currentUserInfo;
+  }
+
+  static Future<String?> readToken() async {
+    String? currentToken;
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? token = preferences.getString("token");
+    currentToken = token;
+    return currentToken;
   }
 
   static Future<User?> removeUserInfo() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     await preferences.remove("currentUser");
+  }
+
+  static Future<User?> removeToken() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    await preferences.remove("token");
   }
 }

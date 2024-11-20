@@ -4,11 +4,18 @@ import 'package:password_manager/user_preferences/userPreferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CurrentUser extends GetxController {
-  final Rx<User> _currentUser = User(0, '', '', '').obs;
+  final Rx<User> _currentUser = User(0, '', '', '', '').obs;
+  final Rx<String> _currentToken = "".obs;
   User get user => _currentUser.value;
+  String get token => _currentToken.value;
 
   getUserInfo() async {
     User? getUserInfoFromLocalStorage = await RememberUserPrefs.readUserInfo();
     _currentUser.value = getUserInfoFromLocalStorage!;
+  }
+
+  getToken() async {
+    String? getTokenFromLocalStorage = await RememberUserPrefs.readToken();
+    _currentToken.value = getTokenFromLocalStorage!;
   }
 }
