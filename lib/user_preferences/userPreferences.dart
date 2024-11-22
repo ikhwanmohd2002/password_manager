@@ -1,7 +1,12 @@
 import 'dart:convert';
 
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:password_manager/api_connection/api_connection.dart';
+import 'package:password_manager/fragments/dashboard_of_fragments.dart';
 import 'package:password_manager/model/user.dart';
+import 'package:password_manager/screens/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class RememberUserPrefs {
   static Future<void> storeUserInfo(User userInfo) async {
@@ -43,5 +48,27 @@ class RememberUserPrefs {
   static Future<User?> removeToken() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     await preferences.remove("token");
+  }
+
+  checkTokenValidity() async {
+    try {
+      String? token = await RememberUserPrefs.readToken();
+      if (token == null || token.isEmpty) {
+        return const LoginScreen();
+      }
+      var res1 = await http.get(
+        Uri.parse(API.userDetailsIntelliVault),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Token $token'
+        },
+      );
+
+      if (res1.statusCode == 200) {}
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Token Expired");
+      return const LoginScreen();
+    }
+    return const LoginScreen();
   }
 }

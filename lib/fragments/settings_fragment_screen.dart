@@ -37,6 +37,7 @@ class SettingsFragmentScreen extends StatelessWidget {
     ));
 
     if (resultResponse == "loggedOut") {
+      await RememberUserPrefs.removeToken();
       await RememberUserPrefs.removeUserInfo().then((value) {
         Get.off(LoginScreen());
       });

@@ -14,6 +14,7 @@ import 'package:password_manager/screens/add_password_screen.dart';
 import 'package:password_manager/screens/edit_password_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 import 'package:http/http.dart' as http;
+import 'package:password_manager/user_preferences/userPreferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HomeFragmentScreen extends StatefulWidget {
@@ -238,6 +239,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
   @override
   void initState() {
     super.initState();
+    RememberUserPrefs().checkTokenValidity;
     getPassword("");
   }
 
