@@ -53,6 +53,7 @@ class RememberUserPrefs {
   checkTokenValidity() async {
     try {
       String? token = await RememberUserPrefs.readToken();
+      print(token);
       if (token == null || token.isEmpty) {
         return const LoginScreen();
       }

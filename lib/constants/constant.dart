@@ -3,6 +3,7 @@ import 'package:password_strength_checker/password_strength_checker.dart';
 
 var primary1Color = Color(0xffF86668);
 var primary2Color = Color(0xffF2167B);
+var primary3Color = Color(0xfff8484a);
 
 enum CustomPassStrength implements PasswordStrengthItem {
   weak,

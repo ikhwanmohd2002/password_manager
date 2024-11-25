@@ -40,4 +40,20 @@ class API {
       "$hostConnectIntelliVault/dj-rest-auth/login/";
   static const userDetailsIntelliVault =
       "$hostConnectIntelliVault/dj-rest-auth/user/";
+  static const passwordInfoIntelliVault =
+      "$hostConnectIntelliVault/vault/api/logininfo/";
+  static const vaultInfoIntelliVault =
+      "$hostConnectIntelliVault/vault/api/vault/";
+  static const teamInfoIntelliVault =
+      "$hostConnectIntelliVault/collaboration/api/team/";
+  static const invitationInfoIntelliVault =
+      "$hostConnectIntelliVault/collaboration/invitations/";
+  static const invitationSendIntelliVault =
+      "$hostConnectIntelliVault/collaboration/teams/";
+  static const fileInfoIntelliVault =
+      "$hostConnectIntelliVault/vault/api/file/";
+  static const downloadFileIntelliVault =
+      "$hostConnectIntelliVault/vault/file/download/";
+  static const sharedPasswordIntelliVault =
+      "$hostConnectIntelliVault/vault/access/item/";
 }

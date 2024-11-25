@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/constants/constant.dart';
-import 'package:password_manager/fragments/shared_fragment_screen.dart';
+import 'package:password_manager/fragments/file_fragment_screen.dart';
 import 'package:password_manager/fragments/home_fragment_screen.dart';
-import 'package:password_manager/fragments/security_fragment_screen.dart';
+import 'package:password_manager/fragments/team_fragment_screen.dart';
 import 'package:password_manager/fragments/alert_fragment_screen.dart';
 import 'package:password_manager/fragments/settings_fragment_screen.dart';
 import 'package:password_manager/fragments/vault_fragment_screen.dart';
@@ -13,8 +13,8 @@ class DashboardOfFragments extends StatelessWidget {
   CurrentUser _rememberCurrentUser = Get.put(CurrentUser());
   final List<Widget> _fragmentScreens = [
     HomeFragmentScreen(),
-    SharedFragmentScreen(),
-    SecurityFragmentScreen(),
+    FileFragmentScreen(),
+    TeamFragmentScreen(),
     AlertFragmentScreen(),
     SettingsFragmentScreen(),
     VaultFragmentScreen(),
@@ -23,17 +23,17 @@ class DashboardOfFragments extends StatelessWidget {
     {
       "active_icon": Icons.lock_open,
       "non_active_icon": Icons.lock,
-      "label": "Vault"
+      "label": "Items"
     },
     {
       "active_icon": Icons.folder_shared,
       "non_active_icon": Icons.folder_shared_outlined,
-      "label": "Shared"
+      "label": "Files"
     },
     {
-      "active_icon": Icons.shield,
-      "non_active_icon": Icons.shield_outlined,
-      "label": "Security"
+      "active_icon": Icons.add_reaction_rounded,
+      "non_active_icon": Icons.add_reaction_outlined,
+      "label": "Teams"
     },
     {
       "active_icon": Icons.notifications_active,
@@ -48,7 +48,7 @@ class DashboardOfFragments extends StatelessWidget {
     {
       "active_icon": Icons.security,
       "non_active_icon": Icons.security_outlined,
-      "label": "Volt"
+      "label": "Vault"
     },
   ];
 
@@ -56,6 +56,9 @@ class DashboardOfFragments extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (Get.arguments != null && Get.arguments is int) {
+      _indexNumber.value = Get.arguments as int;
+    }
     return GetBuilder(
       init: CurrentUser(),
       initState: (currentState) {
@@ -64,6 +67,11 @@ class DashboardOfFragments extends StatelessWidget {
       },
       builder: (controller) {
         return Scaffold(
+          appBar: AppBar(
+            backgroundColor: primary1Color,
+            title: const Text("IntelliVault"),
+            automaticallyImplyLeading: false,
+          ),
           backgroundColor: Colors.white,
           body:
               SafeArea(child: Obx(() => _fragmentScreens[_indexNumber.value])),
