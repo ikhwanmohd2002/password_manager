@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -40,23 +38,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
 
     try {
-      print(userModel.toJson());
       var res = await http.post(Uri.parse(API.registerIntelliVault),
           body: userModel.toJson());
 
-      if (res.statusCode == 204)
+      if (res.statusCode == 204) {
         Fluttertoast.showToast(msg: "You have successfully registered");
-      setState(() {
-        usernameController.clear();
-        emailController.clear();
-        passwordController.clear();
-        password2Controller.clear();
-      });
-      Future.delayed(const Duration(milliseconds: 2000), () {
-        Get.to(const LoginScreen());
-      });
+        setState(() {
+          usernameController.clear();
+          emailController.clear();
+          passwordController.clear();
+          password2Controller.clear();
+        });
+        Future.delayed(const Duration(milliseconds: 2000), () {
+          Get.to(const LoginScreen());
+        });
+      }
     } catch (e) {
-      print(e);
       Fluttertoast.showToast(msg: e.toString());
     }
   }

@@ -56,4 +56,10 @@ class API {
       "$hostConnectIntelliVault/vault/file/download/";
   static const sharedPasswordIntelliVault =
       "$hostConnectIntelliVault/vault/access/item/";
+  static const sharePasswordIntelliVault =
+      "$hostConnectIntelliVault/vault/share/logininfo/";
+  static const shareFileIntelliVault =
+      "$hostConnectIntelliVault/vault/share/file/";
+  static const generatePasswordIntelliVault =
+      "$hostConnectIntelliVault/password-management/api/generated-password/";
 }

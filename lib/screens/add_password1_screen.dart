@@ -8,7 +8,6 @@ import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
 import 'package:password_manager/fragments/dashboard_of_fragments.dart';
 import 'package:password_manager/model/password1.dart';
-import 'package:password_manager/model/vault.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 import 'package:password_manager/user_preferences/userPreferences.dart';
 import 'package:password_strength_checker/password_strength_checker.dart';
@@ -144,23 +143,26 @@ class _AddPassword1ScreenState extends State<AddPassword1Screen> {
 
   @override
   Widget build(BuildContext context) {
-    // final hasArguments = Get.arguments != null;
-    // final arguments = hasArguments ? Get.arguments : {};
-    // //final int? id = hasArguments ? arguments['id'] : null;
-    // final int? vault = hasArguments ? arguments['vault'] : null;
-    // final String? username = hasArguments ? arguments['username'] : null;
-    // final String? password = hasArguments ? arguments['password'] : null;
+    final hasArguments = Get.arguments != null;
+    final arguments = hasArguments ? Get.arguments : {};
+    final int? id = hasArguments ? arguments['id'] : null;
+    final int? vault = hasArguments ? arguments['vault'] : null;
+    final String? username = hasArguments ? arguments['username'] : null;
+    final String? password = hasArguments ? arguments['password'] : null;
 
-    // usernameController = TextEditingController(text: username ?? "");
-    // passwordController = TextEditingController(text: password ?? "");
+    usernameController = TextEditingController(text: username ?? "");
+    passwordController = TextEditingController(text: password ?? "");
+    if (hasArguments) {
+      passNotifier.value = PasswordStrength.calculate(text: password!);
+    }
 
-    // vaultID = vault;
+    vaultID = vault;
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: primary1Color,
-        title: Text("Add Password"),
+        title: Text(hasArguments ? "Update Password" : "Add Password"),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -303,7 +305,11 @@ class _AddPassword1ScreenState extends State<AddPassword1Screen> {
                       child: InkWell(
                         onTap: () {
                           if (formKey.currentState!.validate()) {
-                            addPassword();
+                            if (hasArguments) {
+                              updatePassword(id!);
+                            } else {
+                              addPassword();
+                            }
                           }
                         },
                         child: Container(

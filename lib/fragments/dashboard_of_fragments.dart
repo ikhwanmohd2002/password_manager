@@ -1,23 +1,26 @@
+// ignore_for_file: use_key_in_widget_constructors
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/constants/constant.dart';
 import 'package:password_manager/fragments/file_fragment_screen.dart';
 import 'package:password_manager/fragments/home_fragment_screen.dart';
+import 'package:password_manager/fragments/password_fragment_screen.dart';
 import 'package:password_manager/fragments/team_fragment_screen.dart';
-import 'package:password_manager/fragments/alert_fragment_screen.dart';
 import 'package:password_manager/fragments/settings_fragment_screen.dart';
 import 'package:password_manager/fragments/vault_fragment_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 
+// ignore: must_be_immutable
 class DashboardOfFragments extends StatelessWidget {
-  CurrentUser _rememberCurrentUser = Get.put(CurrentUser());
+  final CurrentUser _rememberCurrentUser = Get.put(CurrentUser());
   final List<Widget> _fragmentScreens = [
-    HomeFragmentScreen(),
-    FileFragmentScreen(),
-    TeamFragmentScreen(),
-    AlertFragmentScreen(),
+    const HomeFragmentScreen(),
+    const FileFragmentScreen(),
+    const PasswordFragmentScreen(),
+    const TeamFragmentScreen(),
+    const VaultFragmentScreen(),
     SettingsFragmentScreen(),
-    VaultFragmentScreen(),
   ];
   final List _navigationButtonsProperties = [
     {
@@ -31,24 +34,24 @@ class DashboardOfFragments extends StatelessWidget {
       "label": "Files"
     },
     {
-      "active_icon": Icons.add_reaction_rounded,
-      "non_active_icon": Icons.add_reaction_outlined,
-      "label": "Teams"
-    },
-    {
       "active_icon": Icons.notifications_active,
       "non_active_icon": Icons.notifications_outlined,
       "label": "Alerts"
     },
     {
-      "active_icon": Icons.settings,
-      "non_active_icon": Icons.settings_outlined,
-      "label": "Settings"
+      "active_icon": Icons.add_reaction_rounded,
+      "non_active_icon": Icons.add_reaction_outlined,
+      "label": "Teams"
     },
     {
       "active_icon": Icons.security,
       "non_active_icon": Icons.security_outlined,
       "label": "Vault"
+    },
+    {
+      "active_icon": Icons.settings,
+      "non_active_icon": Icons.settings_outlined,
+      "label": "Settings"
     },
   ];
 

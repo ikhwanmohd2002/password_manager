@@ -10,14 +10,12 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
-import 'package:password_manager/model/password.dart';
 import 'package:password_manager/model/password1.dart';
 import 'package:password_manager/model/shared.dart';
 import 'package:password_manager/screens/add_password1_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 import 'package:http/http.dart' as http;
 import 'package:password_manager/user_preferences/userPreferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class HomeFragmentScreen extends StatefulWidget {
   const HomeFragmentScreen({super.key});
@@ -30,11 +28,11 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
   TextEditingController searchController = TextEditingController();
   final currentOnlineUser = Get.put(CurrentUser());
   List<RxBool> isObsecureV2 = [];
-  List<RxBool> isObsecureV3 = [];
   List<RxBool> isObsecureV4 = [];
   final List<String> items = ['Update', 'Share', 'Delete'];
   String? selectedValue;
   var formKey = GlobalKey<FormState>();
+  TextEditingController sharingPasswordController = TextEditingController();
   TextEditingController sharedEmailController = TextEditingController();
   TextEditingController sharedLinkController = TextEditingController();
   TextEditingController sharedAccessPasswordController =
@@ -53,12 +51,6 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
     });
   }
 
-  Future<void> _launchUrl(Uri url) async {
-    if (!await launchUrl(url)) {
-      throw Exception('Could not launch $url');
-    }
-  }
-
   updateLastRetrieved(int password_id) async {
     try {
       var res = await http.post(Uri.parse(API.updatePasswordRetrieved), body: {
@@ -74,7 +66,6 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
       }
     } catch (e) {
       Fluttertoast.showToast(msg: e.toString());
-      print(e);
     }
   }
 
@@ -123,7 +114,6 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
       }
     } catch (e) {
       Fluttertoast.showToast(msg: e.toString());
-      print(e);
     }
   }
 
@@ -178,9 +168,36 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
     }
   }
 
+  Future<String?> sharingPassword(int id, String access_password) async {
+    String link;
+    try {
+      String? token = await RememberUserPrefs.readToken();
+
+      var res = await http.post(
+          Uri.parse("${API.sharePasswordIntelliVault}$id/"),
+          headers: {'Authorization': 'Token $token'},
+          body: {"password": access_password});
+
+      if (res.statusCode == 201) {
+        var responseBodyOfGetSharedPassword = jsonDecode(res.body);
+        link = responseBodyOfGetSharedPassword["share_link"];
+        Uri uri = Uri.parse(link);
+        String code =
+            uri.pathSegments.where((segment) => segment.isNotEmpty).last;
+        return code;
+      } else {
+        Fluttertoast.showToast(msg: "Error sharing password");
+        return null;
+      }
+    } catch (errorMsg) {
+      print(errorMsg);
+    }
+    return null;
+  }
+
   accessSharedPassword() async {
     try {
-      var resultResponse = await Get.dialog(AlertDialog(
+      await Get.dialog(AlertDialog(
         backgroundColor: Colors.white,
         title: const Text(
           "Access Shared Password",
@@ -200,7 +217,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
                     return null;
                   }
                 },
-                decoration: InputDecoration(hintText: "Shared Code"),
+                decoration: const InputDecoration(hintText: "Shared Code"),
               ),
               TextFormField(
                 controller: sharedAccessPasswordController,
@@ -211,7 +228,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
                     return null;
                   }
                 },
-                decoration: InputDecoration(hintText: "Access Password"),
+                decoration: const InputDecoration(hintText: "Access Password"),
               ),
             ],
           ),
@@ -230,7 +247,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
           TextButton(
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
-                  Future.delayed(Duration(milliseconds: 1000), () {
+                  Future.delayed(const Duration(milliseconds: 1000), () {
                     getSharedPassword(
                         sharedLinkController.text.toString().trim(),
                         sharedAccessPasswordController.text.toString().trim());
@@ -247,6 +264,87 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
               ))
         ],
       ));
+    } catch (e) {
+      Fluttertoast.showToast(msg: e.toString());
+    }
+  }
+
+  sharePassword(int id) async {
+    String? sharedLink;
+    try {
+      await Get.dialog(StatefulBuilder(builder: ((context, setState) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: const Text(
+            "Share Password",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: sharingPasswordController,
+                  validator: (value) {
+                    if (value == "") {
+                      return "Please write access password";
+                    } else {
+                      return null;
+                    }
+                  },
+                  decoration:
+                      const InputDecoration(hintText: "Access Password"),
+                ),
+                if (sharedLink != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16.0),
+                    child: SelectableText(
+                      "Access Code : $sharedLink",
+                      style: const TextStyle(color: Colors.green),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  sharedAccessPasswordController.clear();
+                  sharedLinkController.clear();
+                  setState(() {
+                    sharedLink = null;
+                  });
+                  Get.back();
+                },
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(color: Colors.blue),
+                )),
+            TextButton(
+                onPressed: () async {
+                  if (formKey.currentState!.validate()) {
+                    Future.delayed(const Duration(milliseconds: 1000),
+                        () async {
+                      String? result = await sharingPassword(
+                        id,
+                        sharingPasswordController.text.toString().trim(),
+                      );
+                      setState(() {
+                        sharedLink = result;
+                      });
+                      sharingPasswordController.clear();
+                    });
+                  }
+                },
+                child: const Text(
+                  "Share",
+                  style: TextStyle(color: Colors.green),
+                ))
+          ],
+        );
+      })));
     } catch (e) {
       Fluttertoast.showToast(msg: e.toString());
     }
@@ -451,9 +549,8 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
                                                             .decrypted_password
                                                       });
                                                 } else if (value == "Share") {
-                                                  // sendPassword(
-                                                  //     eachPassword.password_id ??
-                                                  //         0);
+                                                  sharePassword(
+                                                      eachPassword.id!);
                                                 } else {
                                                   deletePassword(
                                                       eachPassword.id!);
@@ -514,13 +611,6 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
                 ),
               ),
               sharedPasswords(context),
-              // Padding(
-              //   padding: const EdgeInsets.all(16.0),
-              //   child: ElevatedButton(
-              //     onPressed: _addRow,
-              //     child: Text('Add Row'),
-              //   ),
-              // ),
             ],
           ),
         ),
@@ -551,7 +641,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
   }
 
   Widget sharedPasswords(context) {
-    return rows.length != 0
+    return rows.isNotEmpty
         ? ListView.builder(
             itemCount: rows.length,
             shrinkWrap: true,
@@ -651,66 +741,8 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
                                 ),
                               ),
                               const SizedBox(
-                                width: 10,
+                                width: 50,
                               ),
-                              DropdownButtonHideUnderline(
-                                child: DropdownButton2<String>(
-                                  customButton: const Icon(
-                                    Icons.menu,
-                                    size: 20,
-                                  ),
-                                  items: items
-                                      .map((String item) => DropdownMenuItem(
-                                            value: item,
-                                            child: Icon(
-                                              icons[items.indexOf(item)],
-                                              size: 20,
-                                              color:
-                                                  colors[items.indexOf(item)],
-                                            ),
-                                          ))
-                                      .toList(),
-                                  value: selectedValue,
-                                  onChanged: (String? value) {
-                                    if (value == "Update") {
-                                      // Get.to(const AddPassword1Screen(),
-                                      //     arguments: {
-                                      //       'id': eachPassword.id,
-                                      //       'vault': eachPassword.vault,
-                                      //       'username':
-                                      //           eachPassword.login_username,
-                                      //       'password':
-                                      //           eachPassword.decrypted_password
-                                      //     });
-                                    } else if (value == "Share") {
-                                      // sendPassword(
-                                      //     eachPassword.password_id ??
-                                      //         0);
-                                    } else {
-                                      // deletePassword(eachPassword.id!);
-                                    }
-                                  },
-                                  buttonStyleData: const ButtonStyleData(
-                                    height: 40,
-                                    width: 45,
-                                  ),
-                                  dropdownStyleData: DropdownStyleData(
-                                    maxHeight: 200,
-                                    width: 50,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      color: Colors.white,
-                                    ),
-                                    offset: const Offset(-10, 0),
-                                  ),
-                                  menuItemStyleData: const MenuItemStyleData(
-                                    height: 40,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(
-                                width: 20,
-                              )
                             ],
                           ),
                         ],
@@ -722,7 +754,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
             },
           )
         : Container(
-            padding: EdgeInsets.only(top: 10),
+            padding: const EdgeInsets.only(top: 10),
             child: const Center(
               child: Text(
                 "No shared passwords",
@@ -730,212 +762,5 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
               ),
             ),
           );
-  }
-
-  Widget sharedPasswordss(context) {
-    return FutureBuilder(
-        future: getPassword1(),
-        builder: (context, AsyncSnapshot<List<Password1>> dataSnapShot) {
-          if (dataSnapShot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          if (dataSnapShot.data == null) {
-            return const Center(
-              child: Text(
-                "No shared passwords",
-                style: TextStyle(color: Colors.grey),
-              ),
-            );
-          }
-
-          if (dataSnapShot.data!.length > 0) {
-            return ListView.builder(
-              itemCount: dataSnapShot.data!.length,
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              scrollDirection: Axis.vertical,
-              itemBuilder: (context, index) {
-                isObsecureV3.add(true.obs);
-                Password1 eachPassword1 = dataSnapShot.data![index];
-
-                return Container(
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  margin: EdgeInsets.fromLTRB(0, index == 0 ? 16 : 8, 0,
-                      index == dataSnapShot.data!.length - 1 ? 16 : 8),
-                  decoration: BoxDecoration(
-                    border: Border.symmetric(
-                        horizontal: BorderSide(color: primary1Color)),
-                    color: Colors.white,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                          child: Padding(
-                        padding: const EdgeInsets.only(left: 15),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Padding(
-                                    padding: const EdgeInsets.only(right: 12),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          eachPassword1.login_username!,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ],
-                                    )),
-                                const Spacer(),
-                                Obx(
-                                  () => SizedBox(
-                                    width: 80,
-                                    child: Text(
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
-                                      isObsecureV3[index].value
-                                          ? eachPassword1.decrypted_password
-                                              .toString()
-                                              .replaceAll(RegExp(r"."), "•")
-                                          : eachPassword1.decrypted_password
-                                              .toString(),
-                                      style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(
-                                  width: 10,
-                                ),
-                                Obx(() => GestureDetector(
-                                      onTap: () {
-                                        isObsecureV3[index].value =
-                                            !isObsecureV3[index].value;
-                                      },
-                                      child: Icon(
-                                        isObsecureV3[index].value
-                                            ? Icons.visibility_off
-                                            : Icons.visibility,
-                                        color: Colors.black,
-                                        size: 20,
-                                      ),
-                                    )),
-                                const SizedBox(
-                                  width: 10,
-                                ),
-                                GestureDetector(
-                                  onTap: () async {
-                                    await Clipboard.setData(ClipboardData(
-                                        text: eachPassword1.decrypted_password
-                                            .toString()));
-                                    Fluttertoast.showToast(
-                                        msg: "Copied to clipboard");
-                                  },
-                                  child: const Icon(
-                                    Icons.copy,
-                                    size: 20,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                const SizedBox(
-                                  width: 10,
-                                ),
-                                DropdownButtonHideUnderline(
-                                  child: DropdownButton2<String>(
-                                    customButton: const Icon(
-                                      Icons.menu,
-                                      size: 20,
-                                    ),
-                                    items: items
-                                        .map((String item) => DropdownMenuItem(
-                                              value: item,
-                                              child: Icon(
-                                                icons[items.indexOf(item)],
-                                                size: 20,
-                                                color:
-                                                    colors[items.indexOf(item)],
-                                              ),
-                                            ))
-                                        .toList(),
-                                    value: selectedValue,
-                                    onChanged: (String? value) {
-                                      if (value == "Update") {
-                                        Get.to(const AddPassword1Screen(),
-                                            arguments: {
-                                              'id': eachPassword1.id,
-                                              'vault': eachPassword1.vault,
-                                              'username':
-                                                  eachPassword1.login_username,
-                                              'password': eachPassword1
-                                                  .decrypted_password
-                                            });
-                                      } else if (value == "Share") {
-                                        // sendPassword(
-                                        //     eachPassword.password_id ??
-                                        //         0);
-                                      } else {
-                                        deletePassword(eachPassword1.id!);
-                                      }
-                                    },
-                                    buttonStyleData: const ButtonStyleData(
-                                      height: 40,
-                                      width: 45,
-                                    ),
-                                    dropdownStyleData: DropdownStyleData(
-                                      maxHeight: 200,
-                                      width: 50,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        color: Colors.white,
-                                      ),
-                                      offset: const Offset(-10, 0),
-                                    ),
-                                    menuItemStyleData: const MenuItemStyleData(
-                                      height: 40,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(
-                                  width: 20,
-                                )
-                              ],
-                            ),
-                          ],
-                        ),
-                      )),
-                    ],
-                  ),
-                );
-              },
-            );
-          } else {
-            return const Column(
-              children: [
-                SizedBox(
-                  height: 24,
-                ),
-                Center(
-                  child: Text(
-                    "No requests pending",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ],
-            );
-          }
-        });
   }
 }

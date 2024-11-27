@@ -1,8 +1,9 @@
+// ignore_for_file: file_names
+
 import 'dart:convert';
 
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
-import 'package:password_manager/fragments/dashboard_of_fragments.dart';
 import 'package:password_manager/model/user.dart';
 import 'package:password_manager/screens/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,11 +44,13 @@ class RememberUserPrefs {
   static Future<User?> removeUserInfo() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     await preferences.remove("currentUser");
+    return null;
   }
 
   static Future<User?> removeToken() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     await preferences.remove("token");
+    return null;
   }
 
   checkTokenValidity() async {
