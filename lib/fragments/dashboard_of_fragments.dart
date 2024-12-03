@@ -34,9 +34,9 @@ class DashboardOfFragments extends StatelessWidget {
       "label": "Files"
     },
     {
-      "active_icon": Icons.notifications_active,
-      "non_active_icon": Icons.notifications_outlined,
-      "label": "Alerts"
+      "active_icon": Icons.upload_rounded,
+      "non_active_icon": Icons.upload_outlined,
+      "label": "Generate"
     },
     {
       "active_icon": Icons.add_reaction_rounded,

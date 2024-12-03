@@ -151,6 +151,13 @@ class _AddFileScreenState extends State<AddFileScreen> {
                               height: 20,
                             ),
                             DropdownButtonFormField<int>(
+                              validator: (value) {
+                                if (value == null) {
+                                  return "Please select vault";
+                                } else {
+                                  return null;
+                                }
+                              },
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Colors.white,

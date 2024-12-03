@@ -61,7 +61,7 @@ class _AddVaultScreenState extends State<AddVaultScreen> {
           nameController.clear();
         });
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.to(DashboardOfFragments(), arguments: 5);
+          Get.to(DashboardOfFragments(), arguments: 4);
         });
       }
     } catch (e) {
@@ -90,7 +90,7 @@ class _AddVaultScreenState extends State<AddVaultScreen> {
           nameController.clear();
         });
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.to(DashboardOfFragments(), arguments: 5);
+          Get.to(DashboardOfFragments(), arguments: 4);
         });
       }
     } catch (e) {
@@ -131,6 +131,9 @@ class _AddVaultScreenState extends State<AddVaultScreen> {
   void initState() {
     super.initState();
     fetchTeams();
+    final hasArguments = Get.arguments != null;
+    final arguments = hasArguments ? Get.arguments : {};
+    teamID = hasArguments ? arguments['team'] : null;
   }
 
   @override
@@ -138,10 +141,8 @@ class _AddVaultScreenState extends State<AddVaultScreen> {
     final hasArguments = Get.arguments != null;
     final arguments = hasArguments ? Get.arguments : {};
     final int? id = hasArguments ? arguments['id'] : null;
-    final int? team = hasArguments ? arguments['team'] : null;
     final String? name = hasArguments ? arguments['name'] : null;
     nameController = TextEditingController(text: name ?? "");
-    teamID = team;
 
     return Scaffold(
       backgroundColor: Colors.white,

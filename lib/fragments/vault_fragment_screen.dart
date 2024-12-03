@@ -335,6 +335,7 @@ class _VaultFragmentScreenState extends State<VaultFragmentScreen> {
                                         value: selectedValue,
                                         onChanged: (String? value) {
                                           if (value == "Update") {
+                                            print(eachVault.team);
                                             Get.to(const AddVaultScreen(),
                                                 arguments: {
                                                   'id': eachVault.id,

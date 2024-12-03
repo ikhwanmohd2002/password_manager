@@ -107,6 +107,36 @@ class _AddPassword1ScreenState extends State<AddPassword1Screen> {
     }
   }
 
+  Future<String?> generatePassword(int length, bool use_uppercase,
+      bool use_numbers, bool use_special_chars) async {
+    try {
+      String? token = await RememberUserPrefs.readToken();
+
+      var res = await http.post(Uri.parse(API.generatePasswordIntelliVault),
+          headers: {
+            'Authorization': 'Token $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            "length": length,
+            "use_uppercase": use_uppercase,
+            "use_numbers": use_numbers,
+            "use_special_chars": use_special_chars
+          }));
+
+      if (res.statusCode == 201) {
+        var responseBodyOfGeneratePassword = jsonDecode(res.body);
+        String generatedPassword = responseBodyOfGeneratePassword["password"];
+
+        return generatedPassword;
+      } else {
+        Fluttertoast.showToast(msg: "Error sharing password");
+        return null;
+      }
+    } catch (errorMsg) {}
+    return null;
+  }
+
   Future<void> fetchVaults() async {
     try {
       String? token = await RememberUserPrefs.readToken();
@@ -139,6 +169,16 @@ class _AddPassword1ScreenState extends State<AddPassword1Screen> {
   void initState() {
     super.initState();
     fetchVaults();
+    final hasArguments = Get.arguments != null;
+    final arguments = hasArguments ? Get.arguments : {};
+    final String? password = hasArguments ? arguments['password'] : null;
+    final String? username = hasArguments ? arguments['username'] : null;
+    vaultID = hasArguments ? arguments['vault'] : null;
+    if (hasArguments) {
+      passNotifier.value = PasswordStrength.calculate(text: password!);
+    }
+    passwordController = TextEditingController(text: password ?? "");
+    usernameController = TextEditingController(text: username ?? "");
   }
 
   @override
@@ -146,17 +186,6 @@ class _AddPassword1ScreenState extends State<AddPassword1Screen> {
     final hasArguments = Get.arguments != null;
     final arguments = hasArguments ? Get.arguments : {};
     final int? id = hasArguments ? arguments['id'] : null;
-    final int? vault = hasArguments ? arguments['vault'] : null;
-    final String? username = hasArguments ? arguments['username'] : null;
-    final String? password = hasArguments ? arguments['password'] : null;
-
-    usernameController = TextEditingController(text: username ?? "");
-    passwordController = TextEditingController(text: password ?? "");
-    if (hasArguments) {
-      passNotifier.value = PasswordStrength.calculate(text: password!);
-    }
-
-    vaultID = vault;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -241,6 +270,13 @@ class _AddPassword1ScreenState extends State<AddPassword1Screen> {
                               height: 20,
                             ),
                             DropdownButtonFormField<int>(
+                              validator: (value) {
+                                if (value == null) {
+                                  return "Please select vault";
+                                } else {
+                                  return null;
+                                }
+                              },
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Colors.white,
@@ -284,17 +320,42 @@ class _AddPassword1ScreenState extends State<AddPassword1Screen> {
                   ),
                   FadeInUp(
                     duration: const Duration(milliseconds: 1800),
-                    child: PasswordStrengthChecker(
-                      strength: passNotifier,
-                    ),
-                  ),
-                  FadeInUp(
-                    duration: const Duration(milliseconds: 1800),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        PasswordStrength.instructions,
-                      ),
+                    child: Row(
+                      children: [
+                        Flexible(
+                          flex: 2,
+                          child: PasswordStrengthChecker(
+                            strength: passNotifier,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 20,
+                        ),
+                        Flexible(
+                          flex: 2,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white),
+                            onPressed: () {
+                              Future.delayed(const Duration(milliseconds: 1000),
+                                  () async {
+                                String? result = await generatePassword(
+                                    12, true, true, true);
+                                setState(() {
+                                  passNotifier.value =
+                                      PasswordStrength.calculate(text: result!);
+                                  passwordController.text = result;
+                                });
+                              });
+                            },
+                            child: const Text(
+                              'Generate Password',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(

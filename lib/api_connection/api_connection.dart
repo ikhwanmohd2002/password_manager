@@ -38,6 +38,8 @@ class API {
       "$hostConnectIntelliVault/dj-rest-auth/registration/";
   static const loginIntelliVault =
       "$hostConnectIntelliVault/dj-rest-auth/login/";
+  static const changePasswordIntelliVault =
+      "$hostConnectIntelliVault/dj-rest-auth/password/change/";
   static const userDetailsIntelliVault =
       "$hostConnectIntelliVault/dj-rest-auth/user/";
   static const passwordInfoIntelliVault =
@@ -62,4 +64,5 @@ class API {
       "$hostConnectIntelliVault/vault/share/file/";
   static const generatePasswordIntelliVault =
       "$hostConnectIntelliVault/password-management/api/generated-password/";
+  static const predictLoginIntelliVault = "$hostConnectIntelliVault/vault/ai/";
 }

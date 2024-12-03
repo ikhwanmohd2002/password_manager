@@ -135,6 +135,7 @@ class _FileFragmentScreenState extends State<FileFragmentScreen> {
           final file = File(filePath);
 
           await file.writeAsBytes(res.bodyBytes);
+          Fluttertoast.showToast(msg: "File Downloaded");
         } else {
           Fluttertoast.showToast(msg: "Storage permission not granted.");
         }

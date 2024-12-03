@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:password_manager/api_connection/api_connection.dart';
@@ -24,8 +25,27 @@ class _LoginScreenState extends State<LoginScreen> {
   var usernameController = TextEditingController();
   var emailController = TextEditingController();
   var passwordController = TextEditingController();
+  int attempt = 0;
+  int hour = DateTime.now().hour;
+  double? currentLat;
+  double? currentLon;
+
+  double calculateDistanceVariance(
+      double lat1, double lon1, double lat2, double lon2) {
+    double distance = Geolocator.distanceBetween(lat1, lon1, lat2, lon2);
+    distance /= 1000;
+
+    return distance;
+  }
 
   loginUserNow() async {
+    int? locationVariance;
+    List<double>? prevLocation = await RememberUserPrefs.readLocation();
+    if (prevLocation != null) {
+      var doubleVar = calculateDistanceVariance(
+          prevLocation[0], prevLocation[1], currentLat!, currentLon!);
+      locationVariance = doubleVar.round();
+    }
     try {
       var res = await http.post(Uri.parse(API.loginIntelliVault), body: {
         'username': usernameController.text.trim(),
@@ -35,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (res.statusCode == 200) {
         var resBodyOfLogin = jsonDecode(res.body);
-        Fluttertoast.showToast(msg: "Successfully logged in");
+
         String token = resBodyOfLogin['key'];
         var res1 = await http.get(
           Uri.parse(API.userDetailsIntelliVault),
@@ -50,39 +70,82 @@ class _LoginScreenState extends State<LoginScreen> {
             emailController.text.trim(), '', '');
         RememberUserPrefs.storeUserInfo(userInfo);
         RememberUserPrefs.storeToken(token);
-        Future.delayed(Duration(milliseconds: 2000), () {
-          Get.to(DashboardOfFragments());
+        RememberUserPrefs.removeLocation();
+        RememberUserPrefs.storeLocation(currentLat!, currentLon!);
+
+        bool? checkLogin =
+            await predictLoginAttempt(hour, attempt, locationVariance!);
+
+        if (checkLogin != null) {
+          if (checkLogin == false) {
+            Fluttertoast.showToast(msg: "Login Anomalous");
+          } else {
+            Fluttertoast.showToast(msg: "Successfully logged in");
+            Future.delayed(Duration(milliseconds: 2000), () {
+              Get.to(DashboardOfFragments());
+            });
+          }
+        }
+      } else {
+        setState(() {
+          attempt++;
         });
+        Fluttertoast.showToast(msg: "Failed to login. Please Try Again");
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: "Failed to login. Please Try Again");
+      Fluttertoast.showToast(msg: "Failed to login. Please Try Again!!");
       print(e.toString());
     }
   }
 
-  // testAPI() async {
-  //   try {
-  //     var body1 = {
-  //       'user_email': emailController1.text.trim(),
-  //       'user_name': nameController1.text.trim(),
-  //       'user_master_password': passwordController1.text.trim()
-  //     };
-  //     var res = await http.post(Uri.parse(API.hostConnectDjango),
-  //         body: jsonEncode(body1));
+  Future<void> _getLocation() async {
+    RememberUserPrefs locationService = RememberUserPrefs();
+    try {
+      Position position = await locationService.getCurrentLocation();
+      print('Latitude: ${position.latitude}, Longitude: ${position.longitude}');
+      setState(() {
+        currentLat = position.latitude;
+        currentLon = position.longitude;
+      });
+    } catch (e) {}
+  }
 
-  //     if (res.statusCode == 200) {
-  //       var resBodyOfLogin = jsonDecode(res.body);
-  //       if (resBodyOfLogin['success'] == true) {
-  //         Fluttertoast.showToast(msg: "Successfully logged in");
-  //       } else {
-  //         Fluttertoast.showToast(msg: "Failed to login. Please Try Again");
-  //       }
-  //     }
-  //   } catch (e) {
-  //     print(e.toString());
-  //     Fluttertoast.showToast(msg: e.toString());
-  //   }
-  // }
+  Future<bool?> predictLoginAttempt(int time, int attempt, int variance) async {
+    try {
+      String? token = await RememberUserPrefs.readToken();
+
+      var res = await http.post(Uri.parse(API.predictLoginIntelliVault),
+          headers: {
+            'Authorization': 'Token $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            "time": time,
+            "attempt": attempt,
+            "location": variance,
+          }));
+
+      if (res.statusCode == 200) {
+        var responseBodyOfPredictLogin = jsonDecode(res.body);
+        String prediction = responseBodyOfPredictLogin["prediction"];
+        if (prediction == "anomalous") {
+          return false;
+        } else {
+          return true;
+        }
+      } else {
+        Fluttertoast.showToast(msg: "Error predicting login");
+        return null;
+      }
+    } catch (errorMsg) {}
+    return null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _getLocation();
+  }
 
   @override
   Widget build(BuildContext context) {
