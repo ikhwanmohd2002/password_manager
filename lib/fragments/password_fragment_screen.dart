@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -22,7 +23,9 @@ class PasswordFragmentScreen extends StatefulWidget {
 
 class _PasswordFragmentScreenState extends State<PasswordFragmentScreen> {
   var formKey = GlobalKey<FormState>();
+  var formKey1 = GlobalKey<FormState>();
   TextEditingController lengthController = TextEditingController();
+  TextEditingController linkController = TextEditingController();
 
   String? generatedPassword;
 
@@ -54,6 +57,35 @@ class _PasswordFragmentScreenState extends State<PasswordFragmentScreen> {
         return generatedPassword;
       } else {
         Fluttertoast.showToast(msg: "Error sharing password");
+        return null;
+      }
+    } catch (errorMsg) {}
+    return null;
+  }
+
+  predictPhishing(String link) async {
+    try {
+      String? token = await RememberUserPrefs.readToken();
+
+      var res = await http.post(Uri.parse(API.predictPhishingIntelliVault),
+          headers: {
+            'Authorization': 'Token $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            "link": link,
+          }));
+
+      if (res.statusCode == 200) {
+        var responseBodyOfPredictLogin = jsonDecode(res.body);
+        String prediction = responseBodyOfPredictLogin["prediction"];
+        if (prediction == "valid") {
+          Fluttertoast.showToast(msg: "Link Valid");
+        } else {
+          Fluttertoast.showToast(msg: "Phishing Detected");
+        }
+      } else {
+        Fluttertoast.showToast(msg: "Error predicting phishing");
         return null;
       }
     } catch (errorMsg) {}
@@ -205,32 +237,98 @@ class _PasswordFragmentScreenState extends State<PasswordFragmentScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        ElevatedButton(
+                        SizedBox(
+                          width: double.infinity,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white),
+                              onPressed: () {
+                                if (formKey.currentState!.validate()) {
+                                  Future.delayed(
+                                      const Duration(milliseconds: 1000),
+                                      () async {
+                                    String? result = await generatePassword(
+                                        int.parse(lengthController.text
+                                            .toString()
+                                            .trim()),
+                                        useUppercase,
+                                        useNumbers,
+                                        useSpecialChars);
+                                    setState(() {
+                                      generatedPassword = result;
+                                    });
+                                  });
+                                }
+                              },
+                              child: const Text('Generate Password'),
+                            ),
+                          ),
+                        )
+                      ],
+                    )),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  "Phishing Detection",
+                  style: TextStyle(
+                      color: primary1Color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20),
+                ),
+              ),
+              Form(
+                key: formKey1,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(8, 8, 16, 8),
+                      child: Container(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: TextFormField(
+                          style: const TextStyle(fontSize: 12),
+                          controller: linkController,
+                          decoration: const InputDecoration(
+                            labelText: 'URL Link',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Enter URL Link';
+                            } else {
+                              return null;
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                               foregroundColor: Colors.white),
                           onPressed: () {
-                            if (formKey.currentState!.validate()) {
+                            if (formKey1.currentState!.validate()) {
                               Future.delayed(const Duration(milliseconds: 1000),
                                   () async {
-                                String? result = await generatePassword(
-                                    int.parse(lengthController.text
-                                        .toString()
-                                        .trim()),
-                                    useUppercase,
-                                    useNumbers,
-                                    useSpecialChars);
-                                setState(() {
-                                  generatedPassword = result;
-                                });
+                                predictPhishing(
+                                    linkController.text.toString().trim());
                               });
                             }
                           },
-                          child: const Text('Generate Password'),
-                        )
-                      ],
-                    )),
-              )
+                          child: const Text('Detect Phishing'),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
             ],
           ),
         ),

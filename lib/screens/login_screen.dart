@@ -102,7 +102,6 @@ class _LoginScreenState extends State<LoginScreen> {
     RememberUserPrefs locationService = RememberUserPrefs();
     try {
       Position position = await locationService.getCurrentLocation();
-      print('Latitude: ${position.latitude}, Longitude: ${position.longitude}');
       setState(() {
         currentLat = position.latitude;
         currentLon = position.longitude;

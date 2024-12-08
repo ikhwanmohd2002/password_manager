@@ -17,9 +17,9 @@ class DashboardOfFragments extends StatelessWidget {
   final List<Widget> _fragmentScreens = [
     const HomeFragmentScreen(),
     const FileFragmentScreen(),
-    const PasswordFragmentScreen(),
     const TeamFragmentScreen(),
     const VaultFragmentScreen(),
+    const PasswordFragmentScreen(),
     SettingsFragmentScreen(),
   ];
   final List _navigationButtonsProperties = [
@@ -34,11 +34,6 @@ class DashboardOfFragments extends StatelessWidget {
       "label": "Files"
     },
     {
-      "active_icon": Icons.upload_rounded,
-      "non_active_icon": Icons.upload_outlined,
-      "label": "Generate"
-    },
-    {
       "active_icon": Icons.add_reaction_rounded,
       "non_active_icon": Icons.add_reaction_outlined,
       "label": "Teams"
@@ -47,6 +42,11 @@ class DashboardOfFragments extends StatelessWidget {
       "active_icon": Icons.security,
       "non_active_icon": Icons.security_outlined,
       "label": "Vault"
+    },
+    {
+      "active_icon": Icons.upload_rounded,
+      "non_active_icon": Icons.upload_outlined,
+      "label": "Misc"
     },
     {
       "active_icon": Icons.settings,

@@ -42,7 +42,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
           nameController.clear();
         });
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.to(DashboardOfFragments(), arguments: 3);
+          Get.to(DashboardOfFragments(), arguments: 2);
         });
       }
     } catch (e) {
@@ -70,7 +70,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
           nameController.clear();
         });
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.to(DashboardOfFragments(), arguments: 3);
+          Get.to(DashboardOfFragments(), arguments: 2);
         });
       }
     } catch (e) {

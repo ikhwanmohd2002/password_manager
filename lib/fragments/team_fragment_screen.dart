@@ -36,7 +36,8 @@ class _TeamFragmentScreenState extends State<TeamFragmentScreen> {
     List<Team> listOfTeam = [];
     try {
       String? token = await RememberUserPrefs.readToken();
-      var res = await http.get(Uri.parse(API.teamInfoIntelliVault), headers: {
+      var res = await http
+          .get(Uri.parse("${API.teamInfoIntelliVault}my_teams/"), headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Token $token'
       });

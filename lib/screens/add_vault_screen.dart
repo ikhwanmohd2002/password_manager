@@ -61,7 +61,7 @@ class _AddVaultScreenState extends State<AddVaultScreen> {
           nameController.clear();
         });
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.to(DashboardOfFragments(), arguments: 4);
+          Get.to(DashboardOfFragments(), arguments: 3);
         });
       }
     } catch (e) {
@@ -90,7 +90,7 @@ class _AddVaultScreenState extends State<AddVaultScreen> {
           nameController.clear();
         });
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.to(DashboardOfFragments(), arguments: 4);
+          Get.to(DashboardOfFragments(), arguments: 3);
         });
       }
     } catch (e) {

@@ -65,4 +65,6 @@ class API {
   static const generatePasswordIntelliVault =
       "$hostConnectIntelliVault/password-management/api/generated-password/";
   static const predictLoginIntelliVault = "$hostConnectIntelliVault/vault/ai/";
+  static const predictPhishingIntelliVault =
+      "$hostConnectIntelliVault/vault/phishing/";
 }

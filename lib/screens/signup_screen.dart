@@ -52,6 +52,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         Future.delayed(const Duration(milliseconds: 2000), () {
           Get.to(const LoginScreen());
         });
+      } else {
+        Fluttertoast.showToast(msg: "Error registering account");
       }
     } catch (e) {
       Fluttertoast.showToast(msg: e.toString());
