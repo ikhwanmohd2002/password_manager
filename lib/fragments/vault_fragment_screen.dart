@@ -9,6 +9,7 @@ import 'package:password_manager/constants/constant.dart';
 import 'package:http/http.dart' as http;
 import 'package:password_manager/model/vault.dart';
 import 'package:password_manager/screens/add_vault_screen.dart';
+import 'package:password_manager/screens/new_home_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 import 'package:password_manager/user_preferences/userPreferences.dart';
 
@@ -21,48 +22,12 @@ class VaultFragmentScreen extends StatefulWidget {
 
 class _VaultFragmentScreenState extends State<VaultFragmentScreen> {
   TextEditingController searchController = TextEditingController();
-  // var formKey = GlobalKey<FormState>();
-  // var timeController = TextEditingController();
-  // var attemptController = TextEditingController();
-  // var locationController = TextEditingController();
   final List<String> items = ['Update', 'Share', 'Delete'];
   final List<IconData> icons = [Icons.edit, Icons.share, Icons.delete];
   final List<Color> colors = [Colors.blue, Colors.green, Colors.red];
   String? selectedValue;
 
   final currentOnlineUser = Get.put(CurrentUser());
-
-  // testAI() async {
-  //   int time = int.parse(timeController.text.trim());
-  //   int attempt = int.parse(attemptController.text.trim());
-  //   int location = int.parse(locationController.text.trim());
-
-  //   try {
-  //     var body1 = {'time': time, 'attempt': attempt, 'location': location};
-  //     var res = await http.post(Uri.parse(API.testAI), body: jsonEncode(body1));
-
-  //     if (res.statusCode == 200) {
-  //       var resBodyOfSignUp = await jsonDecode(res.body);
-  //       if (resBodyOfSignUp['success'] == true) {
-  //         Fluttertoast.showToast(
-  //             msg: "Login is ${resBodyOfSignUp['prediction']}");
-  //         setState(() {
-  //           timeController.clear();
-  //           attemptController.clear();
-  //           locationController.clear();
-  //         });
-  //         // Future.delayed(const Duration(milliseconds: 2000), () {
-  //         //   Get.to(DashboardOfFragments());
-  //         // });
-  //       } else {
-  //         Fluttertoast.showToast(msg: "An error has occured, try again");
-  //       }
-  //     }
-  //   } catch (e) {
-  //     Fluttertoast.showToast(msg: e.toString());
-  //     print(e);
-  //   }
-  // }
 
   Future<List<Vault>> getVault() async {
     List<Vault> listOfVault = [];
@@ -153,94 +118,19 @@ class _VaultFragmentScreenState extends State<VaultFragmentScreen> {
             const SizedBox(
               height: 16,
             ),
-            // showSearchBarWidget(),
-            // const SizedBox(
-            //   height: 24,
-            // ),
-            // Padding(
-            //   padding: const EdgeInsets.all(8.0),
-            //   child: Form(
-            //     key: formKey,
-            //     child: Column(
-            //       children: <Widget>[
-            //         Container(
-            //           padding: const EdgeInsets.all(8.0),
-            //           decoration: BoxDecoration(
-            //               border:
-            //                   Border(bottom: BorderSide(color: primary1Color))),
-            //           child: TextFormField(
-            //             controller: timeController,
-            //             validator: (value) =>
-            //                 value == "" ? "Please enter time" : null,
-            //             decoration: InputDecoration(
-            //                 border: InputBorder.none,
-            //                 hintText: "Time 0 - 24",
-            //                 hintStyle: TextStyle(color: Colors.grey[700])),
-            //           ),
-            //         ),
-            //         Container(
-            //           padding: const EdgeInsets.all(8.0),
-            //           decoration: BoxDecoration(
-            //               border:
-            //                   Border(bottom: BorderSide(color: primary1Color))),
-            //           child: TextFormField(
-            //             controller: attemptController,
-            //             obscureText: true,
-            //             validator: (value) =>
-            //                 value == "" ? "Please enter login attempts" : null,
-            //             decoration: InputDecoration(
-            //                 border: InputBorder.none,
-            //                 hintText: "Login Attempts",
-            //                 hintStyle: TextStyle(color: Colors.grey[700])),
-            //           ),
-            //         ),
-            //         Container(
-            //           padding: const EdgeInsets.all(8.0),
-            //           decoration: BoxDecoration(
-            //               border:
-            //                   Border(bottom: BorderSide(color: primary1Color))),
-            //           child: TextFormField(
-            //             controller: locationController,
-            //             obscureText: true,
-            //             validator: (value) => value == ""
-            //                 ? "Please enter location variance"
-            //                 : null,
-            //             decoration: InputDecoration(
-            //                 border: InputBorder.none,
-            //                 hintText: "Location Variance",
-            //                 hintStyle: TextStyle(color: Colors.grey[700])),
-            //           ),
-            //         ),
-            //       ],
-            //     ),
-            //   ),
-            // ),
-            // InkWell(
-            //   onTap: () {
-            //     if (formKey.currentState!.validate()) {
-            //       testAI();
-            //     }
-            //   },
-            //   child: Padding(
-            //     padding: const EdgeInsets.all(8.0),
-            //     child: Container(
-            //       height: 50,
-            //       decoration: BoxDecoration(
-            //           borderRadius: BorderRadius.circular(10),
-            //           gradient: LinearGradient(colors: [
-            //             primary2Color,
-            //             primary1Color,
-            //           ])),
-            //       child: const Center(
-            //         child: Text(
-            //           "Test AI",
-            //           style: TextStyle(
-            //               color: Colors.white, fontWeight: FontWeight.bold),
-            //         ),
-            //       ),
-            //     ),
-            //   ),
-            // )
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Vaults",
+                style: TextStyle(
+                    color: primary1Color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20),
+              ),
+            ),
+            const SizedBox(
+              height: 16,
+            ),
             FutureBuilder(
                 future: getVault(),
                 builder: (context, AsyncSnapshot<List<Vault>> dataSnapShot) {
@@ -270,6 +160,7 @@ class _VaultFragmentScreenState extends State<VaultFragmentScreen> {
 
                         return GestureDetector(
                           onTap: () {
+                            Get.to(HomePage());
                             print(eachVault.id);
                           },
                           child: Column(

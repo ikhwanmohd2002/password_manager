@@ -9,6 +9,7 @@ import 'package:password_manager/constants/constant.dart';
 import 'package:password_manager/model/invitation.dart';
 import 'package:password_manager/model/team.dart';
 import 'package:password_manager/screens/add_team_screen.dart';
+import 'package:password_manager/screens/team_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 import 'package:password_manager/user_preferences/userPreferences.dart';
 import 'package:http/http.dart' as http;
@@ -460,6 +461,7 @@ class _TeamFragmentScreenState extends State<TeamFragmentScreen> {
                         return GestureDetector(
                           onTap: () {
                             print(eachTeam.id);
+                            Get.to(TeamScreen());
                           },
                           child: Column(
                             children: [

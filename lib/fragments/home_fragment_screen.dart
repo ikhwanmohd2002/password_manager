@@ -10,6 +10,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
+import 'package:password_manager/controllers/navigation_controller.dart';
+import 'package:password_manager/fragments/dashboard_of_fragments.dart';
 import 'package:password_manager/model/password1.dart';
 import 'package:password_manager/model/shared.dart';
 import 'package:password_manager/screens/add_password1_screen.dart';
@@ -25,6 +27,7 @@ class HomeFragmentScreen extends StatefulWidget {
 }
 
 class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
+  final NavigationController navController = Get.find();
   TextEditingController searchController = TextEditingController();
   final currentOnlineUser = Get.put(CurrentUser());
   List<RxBool> isObsecureV2 = [];
@@ -49,24 +52,6 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
           login_username: login_username, login_password: login_password);
       rows.add(model);
     });
-  }
-
-  updateLastRetrieved(int password_id) async {
-    try {
-      var res = await http.post(Uri.parse(API.updatePasswordRetrieved), body: {
-        'password_id': password_id.toString(),
-      });
-
-      if (res.statusCode == 200) {
-        var resBodyOfUpdateLastRetrieved = await jsonDecode(res.body);
-        if (resBodyOfUpdateLastRetrieved['success'] == true) {
-        } else {
-          Fluttertoast.showToast(msg: "An error has occured, try again");
-        }
-      }
-    } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
-    }
   }
 
   deletePassword(int id) async {
@@ -363,6 +348,11 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              ElevatedButton(
+                  onPressed: () {
+                    navController.navigateToFragment(6);
+                  },
+                  child: Text("Press Here")),
               const SizedBox(
                 height: 16,
               ),

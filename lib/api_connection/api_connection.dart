@@ -51,7 +51,7 @@ class API {
   static const invitationInfoIntelliVault =
       "$hostConnectIntelliVault/collaboration/invitations/";
   static const invitationSendIntelliVault =
-      "$hostConnectIntelliVault/collaboration/teams/";
+      "$hostConnectIntelliVault/collaboration/team/";
   static const fileInfoIntelliVault =
       "$hostConnectIntelliVault/vault/api/file/";
   static const downloadFileIntelliVault =

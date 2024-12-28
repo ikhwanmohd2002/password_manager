@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:password_strength_checker/password_strength_checker.dart';
 
-var primary1Color = Color(0xffF86668);
-var primary2Color = Color(0xffF2167B);
-var primary3Color = Color(0xfff8484a);
+// var primary1Color = Color(0xffF86668);
+// var primary2Color = Color(0xffF2167B);
+// var primary3Color = Color(0xfff8484a);
+
+final Color primary1Color = Color(0xff0D47A1); // Dark Blue
+final Color primary2Color = Color(0xff1976D2); // Medium Blue
+final Color primary3Color = Color(0xff42A5F5);
 
 enum CustomPassStrength implements PasswordStrengthItem {
   weak,

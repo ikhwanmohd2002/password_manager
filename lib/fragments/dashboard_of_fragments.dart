@@ -3,65 +3,66 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/constants/constant.dart';
+import 'package:password_manager/controllers/navigation_controller.dart';
 import 'package:password_manager/fragments/file_fragment_screen.dart';
+import 'package:password_manager/fragments/home1_fragment_screen.dart';
 import 'package:password_manager/fragments/home_fragment_screen.dart';
 import 'package:password_manager/fragments/password_fragment_screen.dart';
 import 'package:password_manager/fragments/team_fragment_screen.dart';
 import 'package:password_manager/fragments/settings_fragment_screen.dart';
+import 'package:password_manager/fragments/team_info_screen.dart';
+import 'package:password_manager/fragments/test_fragment_screen.dart';
 import 'package:password_manager/fragments/vault_fragment_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 
 // ignore: must_be_immutable
 class DashboardOfFragments extends StatelessWidget {
   final CurrentUser _rememberCurrentUser = Get.put(CurrentUser());
+  final NavigationController navController = Get.put(NavigationController());
   final List<Widget> _fragmentScreens = [
-    const HomeFragmentScreen(),
+    const Home1FragmentScreen(),
     const FileFragmentScreen(),
-    const TeamFragmentScreen(),
+    TeamsInfoFragmentScreen(),
     const VaultFragmentScreen(),
     const PasswordFragmentScreen(),
-    SettingsFragmentScreen(),
+    const SettingsFragmentScreen(),
+    const HomeFragmentScreen()
   ];
   final List _navigationButtonsProperties = [
     {
-      "active_icon": Icons.lock_open,
-      "non_active_icon": Icons.lock,
-      "label": "Items"
+      "active_icon": Icons.lock,
+      "non_active_icon": Icons.lock_outline,
+      "label": "Item", // Represents stored passwords
     },
     {
-      "active_icon": Icons.folder_shared,
-      "non_active_icon": Icons.folder_shared_outlined,
-      "label": "Files"
+      "active_icon": Icons.folder,
+      "non_active_icon": Icons.folder_open_outlined,
+      "label": "File", // Represents files and folders
     },
     {
-      "active_icon": Icons.add_reaction_rounded,
-      "non_active_icon": Icons.add_reaction_outlined,
-      "label": "Teams"
+      "active_icon": Icons.group,
+      "non_active_icon": Icons.group_outlined,
+      "label": "Team", // Represents team collaboration
     },
     {
-      "active_icon": Icons.security,
-      "non_active_icon": Icons.security_outlined,
-      "label": "Vault"
+      "active_icon": Icons.shield_rounded,
+      "non_active_icon": Icons.shield_outlined,
+      "label": "Vault", // Represents vault/security features
     },
     {
-      "active_icon": Icons.upload_rounded,
-      "non_active_icon": Icons.upload_outlined,
-      "label": "Misc"
+      "active_icon": Icons.widgets_rounded,
+      "non_active_icon": Icons.widgets_outlined,
+      "label": "Misc", // Represents miscellaneous items
     },
     {
-      "active_icon": Icons.settings,
-      "non_active_icon": Icons.settings_outlined,
-      "label": "Settings"
+      "active_icon": Icons.tune_rounded,
+      "non_active_icon": Icons.tune_outlined,
+      "label": "Setting", // Represents settings/preferences
     },
   ];
 
-  RxInt _indexNumber = 0.obs;
-
   @override
   Widget build(BuildContext context) {
-    if (Get.arguments != null && Get.arguments is int) {
-      _indexNumber.value = Get.arguments as int;
-    }
     return GetBuilder(
       init: CurrentUser(),
       initState: (currentState) {
@@ -70,34 +71,47 @@ class DashboardOfFragments extends StatelessWidget {
       },
       builder: (controller) {
         return Scaffold(
-          appBar: AppBar(
-            backgroundColor: primary1Color,
-            title: const Text("IntelliVault"),
-            automaticallyImplyLeading: false,
-          ),
           backgroundColor: Colors.white,
-          body:
-              SafeArea(child: Obx(() => _fragmentScreens[_indexNumber.value])),
-          bottomNavigationBar: Obx(() => BottomNavigationBar(
-                currentIndex: _indexNumber.value,
-                onTap: (value) {
-                  _indexNumber.value = value;
-                },
-                showSelectedLabels: true,
-                showUnselectedLabels: true,
-                selectedItemColor: Colors.white,
-                unselectedItemColor: Colors.white24,
-                items: List.generate(6, (index) {
-                  var navBtnProperty = _navigationButtonsProperties[index];
-                  return BottomNavigationBarItem(
-                      backgroundColor: primary1Color,
-                      icon: Icon(
-                        navBtnProperty["non_active_icon"],
-                      ),
-                      activeIcon: Icon(navBtnProperty["active_icon"]),
-                      label: (navBtnProperty["label"]));
-                }),
-              )),
+          body: SafeArea(
+            child: Obx(() {
+              if (navController.indexNumber.value >= 0 &&
+                  navController.indexNumber.value < _fragmentScreens.length) {
+                return _fragmentScreens[navController.indexNumber.value];
+              } else {
+                return Center(child: Text("Invalid screen index"));
+              }
+            }),
+          ),
+          bottomNavigationBar: Obx(
+            () => BottomNavigationBar(
+              currentIndex: navController.indexNumber.value <
+                      _navigationButtonsProperties.length
+                  ? navController.indexNumber.value
+                  : 0,
+              onTap: (value) {
+                if (value < _navigationButtonsProperties.length) {
+                  navController.navigateToFragment(value);
+                }
+              },
+              backgroundColor: Colors.white, // Set background color to white
+              selectedItemColor: Colors.blue, // Set color for the selected item
+              unselectedItemColor:
+                  Colors.grey, // Set color for unselected items
+              showSelectedLabels: true, // Show labels for selected items
+              showUnselectedLabels: true, // Show labels for unselected items
+              items:
+                  List.generate(_navigationButtonsProperties.length, (index) {
+                var navBtnProperty = _navigationButtonsProperties[index];
+                return BottomNavigationBarItem(
+                  icon: Icon(
+                    navBtnProperty["non_active_icon"],
+                  ),
+                  activeIcon: Icon(navBtnProperty["active_icon"]),
+                  label: (navBtnProperty["label"]),
+                );
+              }),
+            ),
+          ),
         );
       },
     );
