@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/constants/constant.dart';
 import 'package:password_manager/controllers/navigation_controller.dart';
+import 'package:password_manager/fragments/file1_fragment_screen.dart';
 import 'package:password_manager/fragments/file_fragment_screen.dart';
 import 'package:password_manager/fragments/home1_fragment_screen.dart';
 import 'package:password_manager/fragments/home_fragment_screen.dart';
@@ -12,6 +13,7 @@ import 'package:password_manager/fragments/team_fragment_screen.dart';
 import 'package:password_manager/fragments/settings_fragment_screen.dart';
 import 'package:password_manager/fragments/team_info_screen.dart';
 import 'package:password_manager/fragments/test_fragment_screen.dart';
+import 'package:password_manager/fragments/vault1_fragment_screen.dart';
 import 'package:password_manager/fragments/vault_fragment_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 
@@ -21,12 +23,14 @@ class DashboardOfFragments extends StatelessWidget {
   final NavigationController navController = Get.put(NavigationController());
   final List<Widget> _fragmentScreens = [
     const Home1FragmentScreen(),
-    const FileFragmentScreen(),
+    File1FragmentScreen(),
     TeamsInfoFragmentScreen(),
-    const VaultFragmentScreen(),
+    Vault1FragmentScreen(),
     const PasswordFragmentScreen(),
     const SettingsFragmentScreen(),
-    const HomeFragmentScreen()
+    Vault1FragmentScreen(),
+    const HomeFragmentScreen(),
+    const FileFragmentScreen(),
   ];
   final List _navigationButtonsProperties = [
     {

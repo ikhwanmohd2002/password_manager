@@ -66,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         var resBodyOfUserDetails = jsonDecode(res1.body);
         int pk = resBodyOfUserDetails['pk'];
+
         User userInfo = User(pk, usernameController.text.trim(),
             emailController.text.trim(), '', '');
         RememberUserPrefs.storeUserInfo(userInfo);
@@ -78,11 +79,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (checkLogin != null) {
           if (checkLogin == false) {
-            Fluttertoast.showToast(msg: "Login Anomalous");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Login Anomalous"),
+                backgroundColor: Colors.red,
+              ),
+            );
           } else {
-            Fluttertoast.showToast(msg: "Successfully logged in");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Successfully logged in"),
+                backgroundColor: Colors.green,
+              ),
+            );
+
             Future.delayed(Duration(milliseconds: 2000), () {
-              Get.to(DashboardOfFragments());
+              Get.offAll(DashboardOfFragments(), arguments: {"logged": 0});
             });
           }
         }
@@ -90,10 +102,20 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() {
           attempt++;
         });
-        Fluttertoast.showToast(msg: "Failed to login. Please Try Again");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to login. Please Try Again"),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: "Failed to login. Please Try Again!!");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to login. Please Try Again!!"),
+          backgroundColor: Colors.red,
+        ),
+      );
       print(e.toString());
     }
   }
@@ -133,11 +155,17 @@ class _LoginScreenState extends State<LoginScreen> {
           return true;
         }
       } else {
-        Fluttertoast.showToast(msg: "Error predicting login");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error predicting login"),
+            backgroundColor: Colors.red,
+          ),
+        );
         return null;
       }
-    } catch (errorMsg) {}
-    return null;
+    } catch (errorMsg) {
+      return null;
+    }
   }
 
   @override
@@ -149,272 +177,138 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
-              Container(
-                height: 300,
-                decoration: const BoxDecoration(
-                    image: DecorationImage(
-                        image: AssetImage('images/background.png'),
-                        fit: BoxFit.fill)),
-                child: Stack(
-                  children: <Widget>[
-                    Positioned(
-                      left: 30,
-                      width: 80,
-                      height: 200,
-                      child: FadeInUp(
-                          duration: const Duration(seconds: 1),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                                image: DecorationImage(
-                                    image: AssetImage('images/light-1.png'))),
-                          )),
-                    ),
-                    Positioned(
-                      left: 140,
-                      width: 80,
-                      height: 150,
-                      child: FadeInUp(
-                          duration: const Duration(milliseconds: 1200),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                                image: DecorationImage(
-                                    image: AssetImage('images/light-2.png'))),
-                          )),
-                    ),
-                    Positioned(
-                      right: 40,
-                      top: 40,
-                      width: 80,
-                      height: 150,
-                      child: FadeInUp(
-                          duration: const Duration(milliseconds: 1300),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                                image: DecorationImage(
-                                    image: AssetImage('images/clock.png'))),
-                          )),
-                    ),
-                    Positioned(
-                      child: FadeInUp(
-                          duration: const Duration(milliseconds: 1600),
-                          child: Container(
-                            margin: const EdgeInsets.only(top: 50),
-                            child: const Center(
-                              child: Text(
-                                "Login",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 40,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          )),
-                    )
-                  ],
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            Container(
+              height: 100,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xff0D47A1), Color(0xff1976D2)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(30.0),
-                child: Column(
-                  children: <Widget>[
-                    FadeInUp(
-                        duration: const Duration(milliseconds: 1800),
-                        child: Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: primary1Color),
-                              boxShadow: const [
-                                BoxShadow(
-                                    color: Color.fromRGBO(143, 148, 251, .2),
-                                    blurRadius: 20.0,
-                                    offset: Offset(0, 10))
-                              ]),
-                          child: Form(
-                            key: formKey,
-                            child: Column(
-                              children: <Widget>[
-                                Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  decoration: BoxDecoration(
-                                      border: Border(
-                                          bottom: BorderSide(
-                                              color: primary1Color))),
-                                  child: TextFormField(
-                                    controller: usernameController,
-                                    validator: (value) => value == ""
-                                        ? "Please write username"
-                                        : null,
-                                    decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: "Username",
-                                        hintStyle:
-                                            TextStyle(color: Colors.grey[700])),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  decoration: BoxDecoration(
-                                      border: Border(
-                                          bottom: BorderSide(
-                                              color: primary1Color))),
-                                  child: TextFormField(
-                                    controller: emailController,
-                                    validator: (value) => value == ""
-                                        ? "Please write email"
-                                        : null,
-                                    decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: "Email",
-                                        hintStyle:
-                                            TextStyle(color: Colors.grey[700])),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: TextFormField(
-                                    controller: passwordController,
-                                    obscureText: true,
-                                    validator: (value) => value == ""
-                                        ? "Please write password"
-                                        : null,
-                                    decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: "Password",
-                                        hintStyle:
-                                            TextStyle(color: Colors.grey[700])),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )),
-                    const SizedBox(
-                      height: 30,
+              child: Center(
+                child: Text(
+                  "Unlock Your Secure Vault",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 30.0, vertical: 20.0),
+              child: Column(
+                children: <Widget>[
+                  Container(
+                    padding: const EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 10.0,
+                          offset: Offset(0, 5),
+                        )
+                      ],
                     ),
-                    FadeInUp(
-                        duration: const Duration(milliseconds: 1900),
-                        child: InkWell(
-                          onTap: () {
-                            if (formKey.currentState!.validate()) {
-                              loginUserNow();
-                            }
-                          },
-                          child: Container(
-                            height: 50,
-                            decoration: BoxDecoration(
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        children: <Widget>[
+                          TextFormField(
+                            controller: usernameController,
+                            validator: (value) =>
+                                value == "" ? "Please enter username" : null,
+                            decoration: InputDecoration(
+                              labelText: "Username",
+                              prefixIcon: Icon(Icons.person),
+                              border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                gradient: LinearGradient(colors: [
-                                  primary2Color,
-                                  primary1Color,
-                                ])),
-                            child: const Center(
-                              child: Text(
-                                "Login",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
-                        )),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    FadeInUp(
-                        duration: const Duration(milliseconds: 2000),
-                        child: InkWell(
-                          onTap: () {
-                            Get.to(const SignUpScreen());
-                          },
-                          child: Text(
-                            "Dont have an account?",
-                            style: TextStyle(color: primary1Color),
+                          const SizedBox(height: 15),
+                          TextFormField(
+                            controller: emailController,
+                            validator: (value) =>
+                                value == "" ? "Please enter email" : null,
+                            decoration: InputDecoration(
+                              labelText: "Email",
+                              prefixIcon: Icon(Icons.email),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
                           ),
-                        )),
-                  ],
-                ),
+                          const SizedBox(height: 15),
+                          TextFormField(
+                            controller: passwordController,
+                            obscureText: true,
+                            validator: (value) =>
+                                value == "" ? "Please enter password" : null,
+                            decoration: InputDecoration(
+                              labelText: "Password",
+                              prefixIcon: Icon(Icons.lock),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (formKey.currentState!.validate()) {
+                        loginUserNow();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      backgroundColor: primary1Color,
+                    ),
+                    child: const Center(
+                      child: Text(
+                        "Login",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () {
+                      Get.to(const SignUpScreen());
+                    },
+                    child: Text(
+                      "Don't have an account? Sign Up",
+                      style: TextStyle(
+                        color: primary1Color,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              // Form(
-              //   key: formKey1,
-              //   child: Column(
-              //     children: <Widget>[
-              //       Container(
-              //         padding: const EdgeInsets.all(8.0),
-              //         decoration: BoxDecoration(
-              //             border:
-              //                 Border(bottom: BorderSide(color: primary1Color))),
-              //         child: TextFormField(
-              //           controller: nameController1,
-              //           validator: (value) =>
-              //               value == "" ? "Please write name" : null,
-              //           decoration: InputDecoration(
-              //               border: InputBorder.none,
-              //               hintText: "Name",
-              //               hintStyle: TextStyle(color: Colors.grey[700])),
-              //         ),
-              //       ),
-              //       Container(
-              //         padding: const EdgeInsets.all(8.0),
-              //         decoration: BoxDecoration(
-              //             border:
-              //                 Border(bottom: BorderSide(color: primary1Color))),
-              //         child: TextFormField(
-              //           controller: emailController1,
-              //           validator: (value) =>
-              //               value == "" ? "Please write email" : null,
-              //           decoration: InputDecoration(
-              //               border: InputBorder.none,
-              //               hintText: "Email",
-              //               hintStyle: TextStyle(color: Colors.grey[700])),
-              //         ),
-              //       ),
-              //       Container(
-              //         padding: const EdgeInsets.all(8.0),
-              //         child: TextFormField(
-              //           controller: passwordController1,
-              //           obscureText: true,
-              //           validator: (value) =>
-              //               value == "" ? "Please write master password" : null,
-              //           decoration: InputDecoration(
-              //               border: InputBorder.none,
-              //               hintText: "Master Password",
-              //               hintStyle: TextStyle(color: Colors.grey[700])),
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
-              // InkWell(
-              //   onTap: () {
-              //     if (formKey1.currentState!.validate()) {
-              //       testAPI();
-              //     }
-              //   },
-              //   child: Container(
-              //     height: 50,
-              //     decoration: BoxDecoration(
-              //         borderRadius: BorderRadius.circular(10),
-              //         gradient: LinearGradient(colors: [
-              //           primary2Color,
-              //           primary1Color,
-              //         ])),
-              //     child: const Center(
-              //       child: Text(
-              //         "Test API",
-              //         style: TextStyle(
-              //             color: Colors.white, fontWeight: FontWeight.bold),
-              //       ),
-              //     ),
-              //   ),
-              // )
-            ],
-          ),
-        ));
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

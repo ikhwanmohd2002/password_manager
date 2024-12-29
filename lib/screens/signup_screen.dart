@@ -42,7 +42,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
           body: userModel.toJson());
 
       if (res.statusCode == 204) {
-        Fluttertoast.showToast(msg: "You have successfully registered");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("You have successfully registered"),
+            backgroundColor: Colors.green,
+          ),
+        );
         setState(() {
           usernameController.clear();
           emailController.clear();
@@ -50,307 +55,208 @@ class _SignUpScreenState extends State<SignUpScreen> {
           password2Controller.clear();
         });
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.to(const LoginScreen());
+          Get.offAll(const LoginScreen());
         });
       } else {
-        Fluttertoast.showToast(msg: "Error registering account");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error registering account"),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
-              Container(
-                height: 150,
-                decoration: const BoxDecoration(
-                    image: DecorationImage(
-                        image: AssetImage('images/background.png'),
-                        fit: BoxFit.fill)),
-                child: Stack(
-                  children: <Widget>[
-                    Positioned(
-                      left: 30,
-                      width: 80,
-                      height: 150,
-                      child: FadeInUp(
-                          duration: const Duration(seconds: 1),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                                image: DecorationImage(
-                                    image: AssetImage('images/light-1.png'))),
-                          )),
-                    ),
-                    Positioned(
-                      left: 140,
-                      width: 80,
-                      height: 150,
-                      child: FadeInUp(
-                          duration: const Duration(milliseconds: 1200),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                                image: DecorationImage(
-                                    image: AssetImage('images/light-2.png'))),
-                          )),
-                    ),
-                    Positioned(
-                      right: 40,
-                      top: 10,
-                      width: 80,
-                      height: 150,
-                      child: FadeInUp(
-                          duration: const Duration(milliseconds: 1300),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                                image: DecorationImage(
-                                    image: AssetImage('images/clock.png'))),
-                          )),
-                    ),
-                    Positioned(
-                      child: FadeInUp(
-                          duration: const Duration(milliseconds: 1600),
-                          child: Container(
-                            margin: const EdgeInsets.only(top: 50),
-                            child: const Center(
-                              child: Text(
-                                "Register",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 40,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          )),
-                    )
-                  ],
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            Container(
+              height: 100,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xff0D47A1), Color(0xff1976D2)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(30.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    FadeInUp(
-                        duration: const Duration(milliseconds: 1800),
-                        child: Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: primary1Color),
-                              boxShadow: const [
-                                BoxShadow(
-                                    color: Color.fromRGBO(143, 148, 251, .2),
-                                    blurRadius: 20.0,
-                                    offset: Offset(0, 10))
-                              ]),
-                          child: Form(
-                            key: formKey,
-                            child: Column(
-                              children: <Widget>[
-                                Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  decoration: BoxDecoration(
-                                      border: Border(
-                                          bottom: BorderSide(
-                                              color: primary1Color))),
-                                  child: TextFormField(
-                                    controller: usernameController,
-                                    validator: (value) => value == ""
-                                        ? "Please write username"
-                                        : null,
-                                    decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: "Username",
-                                        hintStyle:
-                                            TextStyle(color: Colors.grey[700])),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  decoration: BoxDecoration(
-                                      border: Border(
-                                          bottom: BorderSide(
-                                              color: primary1Color))),
-                                  child: TextFormField(
-                                    controller: emailController,
-                                    validator: (value) {
-                                      if (value == "") {
-                                        return "Please write email";
-                                      } else if (EmailValidator.validate(
-                                              value!) ==
-                                          false) {
-                                        return "Please write valid email";
-                                      } else {
-                                        return null;
-                                      }
-                                    },
-                                    decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: "Email",
-                                        hintStyle:
-                                            TextStyle(color: Colors.grey[700])),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  decoration: BoxDecoration(
-                                      border: Border(
-                                          bottom: BorderSide(
-                                              color: primary1Color))),
-                                  child: Obx(
-                                    () => TextFormField(
-                                      controller: passwordController,
-                                      obscureText: isObsecure[0].value,
-                                      onChanged: (value) {
-                                        passNotifier1.value =
-                                            CustomPassStrength.calculate(
-                                                text: value);
-                                      },
-                                      validator: (value) {
-                                        if (value == "") {
-                                          return "Please enter password";
-                                        } else if (CustomPassStrength.calculate(
-                                                text: value!) ==
-                                            CustomPassStrength.weak) {
-                                          return "Please enter at least strong password";
-                                        } else if (CustomPassStrength.calculate(
-                                                text: value) ==
-                                            CustomPassStrength.medium) {
-                                          return "Please enter at least strong password";
-                                        } else {
-                                          return null;
-                                        }
-                                      },
-                                      decoration: InputDecoration(
-                                          suffixIcon: Obx(() => GestureDetector(
-                                                onTap: () {
-                                                  isObsecure[0].value =
-                                                      !isObsecure[0].value;
-                                                },
-                                                child: Icon(
-                                                  isObsecure[0].value
-                                                      ? Icons.visibility_off
-                                                      : Icons.visibility,
-                                                  color: Colors.black,
-                                                ),
-                                              )),
-                                          border: InputBorder.none,
-                                          hintText: "Password",
-                                          hintStyle: TextStyle(
-                                              color: Colors.grey[700])),
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Obx(
-                                    () => TextFormField(
-                                      controller: password2Controller,
-                                      obscureText: isObsecure[1].value,
-                                      onChanged: (value) {
-                                        passNotifier1.value =
-                                            CustomPassStrength.calculate(
-                                                text: value);
-                                      },
-                                      decoration: InputDecoration(
-                                          suffixIcon: Obx(() => GestureDetector(
-                                                onTap: () {
-                                                  isObsecure[1].value =
-                                                      !isObsecure[1].value;
-                                                },
-                                                child: Icon(
-                                                  isObsecure[1].value
-                                                      ? Icons.visibility_off
-                                                      : Icons.visibility,
-                                                  color: Colors.black,
-                                                ),
-                                              )),
-                                          border: InputBorder.none,
-                                          hintText: "Confirm Password",
-                                          hintStyle: TextStyle(
-                                              color: Colors.grey[700])),
-                                    ),
-                                  ),
-                                ),
-                              ],
+              child: Center(
+                child: Text(
+                  "Set Up Your Secure Vault",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 5.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    padding: const EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 10.0,
+                          offset: Offset(0, 5),
+                        )
+                      ],
+                    ),
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        children: <Widget>[
+                          TextFormField(
+                            controller: usernameController,
+                            validator: (value) =>
+                                value == "" ? "Please enter username" : null,
+                            decoration: InputDecoration(
+                              labelText: "Username",
+                              prefixIcon: Icon(Icons.person),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                           ),
-                        )),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    FadeInUp(
-                      duration: const Duration(milliseconds: 1800),
-                      child: PasswordStrengthChecker(
-                        strength: passNotifier1,
+                          const SizedBox(height: 15),
+                          TextFormField(
+                            controller: emailController,
+                            validator: (value) {
+                              if (value == "") {
+                                return "Please enter email";
+                              } else if (!EmailValidator.validate(value!)) {
+                                return "Please enter a valid email";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                              labelText: "Email",
+                              prefixIcon: Icon(Icons.email),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          TextFormField(
+                            controller: passwordController,
+                            obscureText: true,
+                            onChanged: (value) {
+                              passNotifier1.value =
+                                  CustomPassStrength.calculate(text: value);
+                            },
+                            validator: (value) {
+                              if (value == "") {
+                                return "Please enter password";
+                              } else if (CustomPassStrength.calculate(
+                                      text: value!) ==
+                                  CustomPassStrength.weak) {
+                                return "Password strength is weak";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                              labelText: "Password",
+                              prefixIcon: Icon(Icons.lock),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          TextFormField(
+                            controller: password2Controller,
+                            obscureText: true,
+                            validator: (value) {
+                              if (value != passwordController.text) {
+                                return "Passwords do not match";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                              labelText: "Confirm Password",
+                              prefixIcon: Icon(Icons.lock),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          PasswordStrengthChecker(
+                            strength: passNotifier1,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            CustomPassStrength.instructions,
+                            style: TextStyle(fontSize: 15, color: Colors.grey),
+                          )
+                        ],
                       ),
                     ),
-                    FadeInUp(
-                      duration: const Duration(milliseconds: 1800),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          CustomPassStrength.instructions,
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (formKey.currentState!.validate()) {
+                        registerAndSaveUserRecord();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      backgroundColor: primary1Color,
+                    ),
+                    child: const Center(
+                      child: Text(
+                        "Register",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    const SizedBox(
-                      height: 20,
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () {
+                      Get.to(const LoginScreen());
+                    },
+                    child: Center(
+                      child: Text(
+                        "Already have an account? Login",
+                        style: TextStyle(
+                          color: primary1Color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                    FadeInUp(
-                        duration: const Duration(milliseconds: 1900),
-                        child: InkWell(
-                          onTap: () {
-                            if (formKey.currentState!.validate()) {
-                              registerAndSaveUserRecord();
-                            }
-                          },
-                          child: Container(
-                            height: 40,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                gradient: LinearGradient(colors: [
-                                  primary2Color,
-                                  primary1Color,
-                                ])),
-                            child: const Center(
-                              child: Text(
-                                "Register Account",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                        )),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    FadeInUp(
-                        duration: const Duration(milliseconds: 2000),
-                        child: InkWell(
-                          onTap: () {
-                            Get.to(const LoginScreen());
-                          },
-                          child: Center(
-                            child: Text(
-                              "Have an account?",
-                              style: TextStyle(color: primary1Color),
-                            ),
-                          ),
-                        )),
-                  ],
-                ),
-              )
-            ],
-          ),
-        ));
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

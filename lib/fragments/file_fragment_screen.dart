@@ -10,6 +10,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
+import 'package:password_manager/controllers/navigation_controller.dart';
+import 'package:password_manager/fragments/file1_fragment_screen.dart';
 import 'package:password_manager/model/file1.dart';
 import 'package:password_manager/model/shared.dart';
 import 'package:password_manager/screens/add_file_screen.dart';
@@ -26,6 +28,7 @@ class FileFragmentScreen extends StatefulWidget {
 }
 
 class _FileFragmentScreenState extends State<FileFragmentScreen> {
+  final NavigationController navController = Get.find();
   final currentOnlineUser = Get.put(CurrentUser());
   List<RxBool> isObsecureV2 = [];
   final List<String> items = ['Share', 'Delete'];
@@ -472,6 +475,11 @@ class _FileFragmentScreenState extends State<FileFragmentScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            ElevatedButton(
+                onPressed: () {
+                  navController.navigateToFragment(7);
+                },
+                child: Text("Press Here")),
             const SizedBox(
               height: 16,
             ),

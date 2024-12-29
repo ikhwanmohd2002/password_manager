@@ -332,7 +332,7 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                     }
                   },
                   decoration: InputDecoration(
-                    hintText: "User ID",
+                    labelText: "User ID",
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(
@@ -375,7 +375,6 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                 "Send",
                 style: TextStyle(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -474,7 +473,7 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                           SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () {
-                              // Add logic to create a team
+                              Get.to(Add1TeamScreen());
                             },
                             child: Text("Create Team"),
                           ),
@@ -627,6 +626,10 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12.0),
+                  topRight: Radius.circular(12.0),
+                ),
                 border: Border(
                   top: BorderSide(color: Colors.grey.shade300),
                 ),
@@ -640,19 +643,43 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                       child: CircularProgressIndicator(),
                     ),
                   if (!isLoadingInvitations && pendingInvitations.isNotEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text(
-                        "Pending Invitations",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                    Container(
+                      width: double.infinity,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: primary1Color, // AppBar-like background color
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12.0),
+                          topRight: Radius.circular(12.0),
                         ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons
+                                .mail_outline, // Example icon for pending invitations
+                            color: Colors.white, // Matches the app bar theme
+                            size: 20.0,
+                          ),
+                          SizedBox(
+                              width:
+                                  8.0), // Adds some spacing between the icon and text
+                          Text(
+                            'Pending Invitations',
+                            style: TextStyle(
+                              color: Colors
+                                  .white, // White text to match app bar theme
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   if (!isLoadingInvitations && pendingInvitations.isNotEmpty)
                     SizedBox(
-                      height: 120, // Adjusted height to make the cards smaller
+                      height: 105, // Adjusted height to make the cards smaller
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: pendingInvitations.length,
@@ -673,7 +700,8 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                             child: Container(
                               width:
                                   150, // Reduced width for a more compact look
-                              padding: EdgeInsets.all(8),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment
                                     .spaceAround, // Spaced evenly

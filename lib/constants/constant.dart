@@ -62,7 +62,7 @@ enum CustomPassStrength implements PasswordStrengthItem {
   }
 
   static String get instructions {
-    return 'Enter a password that contains:\n\n'
+    return 'Enter a password that contains:\n'
         '• At least 8 characters\n'
         '• At least 1 lowercase letter\n'
         '• At least 1 uppercase letter\n'

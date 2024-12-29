@@ -17,4 +17,12 @@ class CurrentUser extends GetxController {
     String? getTokenFromLocalStorage = await RememberUserPrefs.readToken();
     _currentToken.value = getTokenFromLocalStorage!;
   }
+
+  Future<void> reset() async {
+    await RememberUserPrefs.removeUserInfo(); // Clear user info in preferences
+    await RememberUserPrefs.removeToken(); // Clear token in preferences
+    _currentUser.value = User(0, '', '', '', ''); // Reset to initial state
+    _currentToken.value = ''; // Reset token
+    print("CurrentUser reset successfully.");
+  }
 }

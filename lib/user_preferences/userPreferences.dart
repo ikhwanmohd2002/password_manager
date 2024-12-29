@@ -129,8 +129,8 @@ class RememberUserPrefs {
       }
     } catch (e) {
       Fluttertoast.showToast(msg: "Token Expired");
-      Get.off(LoginScreen());
+      Get.offAll(LoginScreen());
     }
-    Get.off(LoginScreen());
+    Get.offAll(LoginScreen());
   }
 }

@@ -39,136 +39,136 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
   Future<void> sharePassword(int id) async {
     String? sharedLink;
     try {
-      await Get.dialog(StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            title: const Text(
-              "Share Password",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
-              ),
-            ),
-            content: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 10),
-                  TextFormField(
-                    controller: sharingPasswordController,
-                    obscureText: true,
-                    validator: (value) =>
-                        value!.isEmpty ? "Please write access password" : null,
-                    decoration: InputDecoration(
-                      hintText: "Access Password",
-                      hintStyle: const TextStyle(color: Colors.grey),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.grey[400]!),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide:
-                            const BorderSide(color: Colors.blue, width: 2),
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15), // Rounded corners
+                ),
+                title: Row(
+                  children: [
+                    Icon(Icons.lock, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text(
+                      "Share Password",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                  if (sharedLink != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16.0),
-                      child: Column(
-                        children: [
-                          const Text(
-                            "Access Code",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
+                  ],
+                ),
+                content: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Enter the access password to share securely.",
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: sharingPasswordController,
+                        obscureText: true,
+                        validator: (value) => value!.isEmpty
+                            ? "Please write access password"
+                            : null,
+                        decoration: InputDecoration(
+                          labelText: "Access Password",
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          SelectableText(
-                            sharedLink!,
+                        ),
+                      ),
+                      if (sharedLink != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: SelectableText(
+                            "Access Code: $sharedLink",
                             style: const TextStyle(
-                              fontSize: 16,
                               color: Colors.green,
+                              fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
                           ),
-                        ],
+                        ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      sharingPasswordController.clear();
+                      setState(() {
+                        sharedLink = null;
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: const Text(
+                      "Cancel",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                ],
-              ),
-            ),
-            actions: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
                   ),
-                ),
-                onPressed: () {
-                  sharingPasswordController.clear();
-                  setState(() {
-                    sharedLink = null;
-                  });
-                  Get.back();
-                },
-                child: const Text("Cancel"),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: () async {
-                  if (formKey.currentState!.validate()) {
-                    await Future.delayed(const Duration(milliseconds: 500),
-                        () async {
-                      String? result = await sharingPassword(
-                        id,
-                        sharingPasswordController.text.trim(),
-                      );
-                      if (result != null) {
-                        setState(() {
-                          sharedLink = result;
-                        });
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () async {
+                      if (formKey.currentState!.validate()) {
+                        String? result = await sharingPassword(
+                          id,
+                          sharingPasswordController.text.trim(),
+                        );
+                        if (result != null) {
+                          setState(() {
+                            sharedLink = result;
+                          });
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Password shared successfully!"),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Error sharing password."),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Password shared successfully!"),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Error sharing password."),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
                       }
-
-                      sharingPasswordController.clear();
-                    });
-                  }
-                },
-                child: const Text("Share"),
-              ),
-            ],
+                    },
+                    child: const Text(
+                      "Share",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
-      ));
+      );
     } catch (e) {
-      // Show error snackbar
-      ScaffoldMessenger.of(Get.context!).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Error: ${e.toString()}"),
           backgroundColor: Colors.red,
@@ -278,114 +278,119 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
 
   Future<void> accessSharedPassword() async {
     try {
-      await Get.dialog(
-        AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text(
-            "Access Shared Password",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15), // Rounded corners
             ),
-          ),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            title: Row(
               children: [
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: sharedLinkController,
-                  validator: (value) =>
-                      value!.isEmpty ? "Please write shared code" : null,
-                  decoration: InputDecoration(
-                    hintText: "Shared Code",
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey[400]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide:
-                          const BorderSide(color: Colors.blue, width: 2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: sharedAccessPasswordController,
-                  obscureText: true,
-                  validator: (value) =>
-                      value!.isEmpty ? "Please write access password" : null,
-                  decoration: InputDecoration(
-                    hintText: "Access Password",
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey[400]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide:
-                          const BorderSide(color: Colors.blue, width: 2),
-                    ),
+                Icon(Icons.lock, color: Colors.blue),
+                SizedBox(width: 8),
+                Text(
+                  "Access Shared Password",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-          ),
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 10),
+                  Text(
+                      "Enter the shared code and access password to retrieve the shared password.",
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: sharedLinkController,
+                    validator: (value) =>
+                        value!.isEmpty ? "Please enter the shared code" : null,
+                    decoration: InputDecoration(
+                      labelText: "Shared Code",
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: sharedAccessPasswordController,
+                    obscureText: true,
+                    validator: (value) => value!.isEmpty
+                        ? "Please enter the access password"
+                        : null,
+                    decoration: InputDecoration(
+                      labelText: "Access Password",
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              onPressed: () {
-                sharedAccessPasswordController.clear();
-                sharedLinkController.clear();
-                Get.back();
-              },
-              child: const Text("Cancel"),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  sharedAccessPasswordController.clear();
+                  sharedLinkController.clear();
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  "Cancel",
+                  style:
+                      TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                 ),
               ),
-              onPressed: () async {
-                if (formKey.currentState!.validate()) {
-                  await Future.delayed(const Duration(milliseconds: 500), () {
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () async {
+                  if (formKey.currentState!.validate()) {
                     getSharedPassword(
                       sharedLinkController.text.trim(),
                       sharedAccessPasswordController.text.trim(),
                     );
                     sharedAccessPasswordController.clear();
                     sharedLinkController.clear();
-                    Get.back();
-                  });
-                }
-              },
-              child: const Text("Access"),
-            ),
-          ],
-        ),
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text(
+                  "Access",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       );
     } catch (e) {
       // Show error snackbar
-      ScaffoldMessenger.of(Get.context!).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Error: ${e.toString()}"),
           backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
         ),
       );
     }
@@ -415,7 +420,7 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
         setState(() {
           isLoadingPasswords = false;
         });
-        showSnackbar(context, "Error occurred executing query");
+        //showSnackbar(context, "Error occurred executing query");
       }
     } catch (errorMsg) {
       print(errorMsg);
@@ -449,43 +454,66 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
             title: Row(
               children: [
                 Icon(
-                  Icons.delete_outline,
-                  color: Colors.red,
-                  size: 24.0,
+                  Icons.warning_amber_rounded,
+                  color: Colors.redAccent,
+                  size: 28,
                 ),
-                const SizedBox(width: 8),
-                const Text(
+                SizedBox(width: 8),
+                Text(
                   "Delete Password",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    color: Colors.redAccent,
                   ),
                 ),
               ],
             ),
-            content: const Text(
-              "Are you sure you want to delete this password?\nThis action cannot be undone.",
-              style: TextStyle(fontSize: 16),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Divider(color: Colors.grey.shade300),
+                SizedBox(height: 16),
+                Text(
+                  "Are you sure you want to delete this password? This action cannot be undone.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                SizedBox(height: 16),
+              ],
             ),
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  Navigator.pop(context); // Dismiss dialog without action
                 },
-                child: const Text(
-                  "No",
+                child: Text(
+                  "Cancel",
                   style: TextStyle(
-                      color: Colors.blue, fontWeight: FontWeight.bold),
+                    color: Colors.blue,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              TextButton(
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
                 onPressed: () {
-                  Navigator.of(context).pop("deleted");
+                  Navigator.pop(context, "deleted"); // Return result
                 },
-                child: const Text(
-                  "Yes",
-                  style:
-                      TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                child: Text(
+                  "Delete",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -562,10 +590,40 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
             child: isLoadingPasswords
                 ? const Center(child: CircularProgressIndicator())
                 : passwords.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "No passwords available",
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.vpn_key_outlined,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              "Oh no, no passwords saved!",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Save your first password to get started!",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Get.to(Add1PasswordScreen());
+                              },
+                              child: Text("Create Password"),
+                            ),
+                          ],
                         ),
                       )
                     : ListView.builder(
@@ -584,7 +642,7 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
                                     borderRadius: BorderRadius.circular(8.0),
                                   ),
                                   elevation: 2,
-                                  color: Colors.grey[100],
+                                  color: Colors.white,
                                   child: ListTile(
                                     leading: Container(
                                       padding: const EdgeInsets.all(6.0),
@@ -925,18 +983,11 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
                           ),
                         ),
                         const SizedBox(height: 5),
-                        ElevatedButton.icon(
+                        ElevatedButton(
                           onPressed: () {
                             accessSharedPassword();
                           },
-                          icon: const Icon(Icons.add),
-                          label: const Text('Add Shared Password'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primary1Color,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                          ),
+                          child: const Text('Add Shared Password'),
                         ),
                       ],
                     ),

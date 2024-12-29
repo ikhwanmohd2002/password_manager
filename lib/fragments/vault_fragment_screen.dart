@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
 import 'package:http/http.dart' as http;
+import 'package:password_manager/controllers/navigation_controller.dart';
 import 'package:password_manager/model/vault.dart';
 import 'package:password_manager/screens/add_vault_screen.dart';
 import 'package:password_manager/screens/new_home_screen.dart';
@@ -21,6 +22,7 @@ class VaultFragmentScreen extends StatefulWidget {
 }
 
 class _VaultFragmentScreenState extends State<VaultFragmentScreen> {
+  final NavigationController navController = Get.find();
   TextEditingController searchController = TextEditingController();
   final List<String> items = ['Update', 'Share', 'Delete'];
   final List<IconData> icons = [Icons.edit, Icons.share, Icons.delete];
@@ -115,6 +117,11 @@ class _VaultFragmentScreenState extends State<VaultFragmentScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            ElevatedButton(
+                onPressed: () {
+                  navController.navigateToFragment(6);
+                },
+                child: Text("Press Here")),
             const SizedBox(
               height: 16,
             ),
