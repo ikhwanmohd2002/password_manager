@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
@@ -20,6 +18,7 @@ class SettingsFragmentScreen extends StatefulWidget {
 
 class _SettingsFragmentScreenState extends State<SettingsFragmentScreen> {
   final NavigationController navController = Get.find();
+  // ignore: prefer_final_fields
   CurrentUser _currentUser = Get.put(CurrentUser());
   var formKey = GlobalKey<FormState>();
   TextEditingController newPasswordController = TextEditingController();
@@ -34,15 +33,15 @@ class _SettingsFragmentScreenState extends State<SettingsFragmentScreen> {
           borderRadius: BorderRadius.circular(12),
         ),
         backgroundColor: Colors.white,
-        title: Row(
+        title: const Row(
           children: [
             Icon(
               Icons.warning_amber_rounded,
               color: Colors.redAccent,
               size: 28,
             ),
-            const SizedBox(width: 8),
-            const Text(
+            SizedBox(width: 8),
+            Text(
               "Logout",
               style: TextStyle(
                 fontSize: 20,
@@ -56,7 +55,7 @@ class _SettingsFragmentScreenState extends State<SettingsFragmentScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Divider(color: Colors.grey.shade300),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               "Are you sure you want to logout from the app?",
               textAlign: TextAlign.center,
@@ -65,7 +64,7 @@ class _SettingsFragmentScreenState extends State<SettingsFragmentScreen> {
                 color: Colors.grey.shade700,
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
           ],
         ),
         actions: [
@@ -134,11 +133,11 @@ class _SettingsFragmentScreenState extends State<SettingsFragmentScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           backgroundColor: Colors.white,
-          title: Row(
+          title: const Row(
             children: [
-              const Icon(Icons.password, color: Colors.blue),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.password, color: Colors.blue),
+              SizedBox(width: 8),
+              Text(
                 "Change Password",
                 style: TextStyle(
                   fontSize: 18,
@@ -272,6 +271,7 @@ class _SettingsFragmentScreenState extends State<SettingsFragmentScreen> {
         ),
       );
     } catch (e) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Error: ${e.toString()}"),
@@ -299,6 +299,7 @@ class _SettingsFragmentScreenState extends State<SettingsFragmentScreen> {
 
       if (res.statusCode == 200) {
         // Show success SnackBar
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("New password saved successfully."),
@@ -308,6 +309,7 @@ class _SettingsFragmentScreenState extends State<SettingsFragmentScreen> {
         );
       } else {
         // Show error SnackBar
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Error saving password. Please try again."),
@@ -318,6 +320,7 @@ class _SettingsFragmentScreenState extends State<SettingsFragmentScreen> {
       }
     } catch (errorMsg) {
       // Show error SnackBar
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Error: ${errorMsg.toString()}"),

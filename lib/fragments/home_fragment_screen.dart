@@ -1,51 +1,224 @@
-// ignore_for_file: non_constant_identifier_names
+// ignore_for_file: use_build_context_synchronously
 
-import 'dart:convert';
-
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
-import 'package:password_manager/controllers/navigation_controller.dart';
-import 'package:password_manager/fragments/dashboard_of_fragments.dart';
 import 'package:password_manager/model/password1.dart';
 import 'package:password_manager/model/shared.dart';
-import 'package:password_manager/screens/add_password1_screen.dart';
-import 'package:password_manager/user_preferences/current_user.dart';
-import 'package:http/http.dart' as http;
+import 'package:password_manager/screens/add_password_screen.dart';
 import 'package:password_manager/user_preferences/userPreferences.dart';
 
-class HomeFragmentScreen extends StatefulWidget {
-  const HomeFragmentScreen({super.key});
+class Home1FragmentScreen extends StatefulWidget {
+  const Home1FragmentScreen({super.key});
 
   @override
-  State<HomeFragmentScreen> createState() => _HomeFragmentScreenState();
+  State<Home1FragmentScreen> createState() => _Home1FragmentScreenState();
 }
 
-class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
-  final NavigationController navController = Get.find();
-  TextEditingController searchController = TextEditingController();
-  final currentOnlineUser = Get.put(CurrentUser());
-  List<RxBool> isObsecureV2 = [];
-  List<RxBool> isObsecureV4 = [];
-  final List<String> items = ['Update', 'Share', 'Delete'];
-  String? selectedValue;
+class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
   var formKey = GlobalKey<FormState>();
-  TextEditingController sharingPasswordController = TextEditingController();
-  TextEditingController sharedEmailController = TextEditingController();
+  List<Password1> passwords = [];
+  bool isLoadingPasswords = true;
+  bool isLoadingSharedPasswords = true;
   TextEditingController sharedLinkController = TextEditingController();
   TextEditingController sharedAccessPasswordController =
       TextEditingController();
-
-  final List<IconData> icons = [Icons.edit, Icons.share, Icons.delete];
-  final List<Color> colors = [Colors.blue, Colors.green, Colors.red];
+  TextEditingController sharingPasswordController = TextEditingController();
 
   List<SharedPasswordItem> rows = [];
 
+  @override
+  void initState() {
+    super.initState();
+    fetchPasswords();
+  }
+
+  Future<void> sharePassword(int id) async {
+    String? sharedLink;
+    try {
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15), // Rounded corners
+                ),
+                title: const Row(
+                  children: [
+                    Icon(Icons.lock, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text(
+                      "Share Password",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                content: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Enter the access password to share securely.",
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: sharingPasswordController,
+                        obscureText: true,
+                        validator: (value) => value!.isEmpty
+                            ? "Please write access password"
+                            : null,
+                        decoration: InputDecoration(
+                          labelText: "Access Password",
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      if (sharedLink != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: SelectableText(
+                            "Access Code: $sharedLink",
+                            style: const TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      sharingPasswordController.clear();
+                      setState(() {
+                        sharedLink = null;
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: const Text(
+                      "Cancel",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () async {
+                      if (formKey.currentState!.validate()) {
+                        String? result = await sharingPassword(
+                          id,
+                          sharingPasswordController.text.trim(),
+                        );
+                        if (result != null) {
+                          setState(() {
+                            sharedLink = result;
+                          });
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Password shared successfully!"),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Error sharing password."),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    child: const Text(
+                      "Share",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${e.toString()}"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<String?> sharingPassword(int id, String accessPassword) async {
+    String link;
+    try {
+      String? token = await RememberUserPrefs.readToken();
+
+      var res = await http.post(
+        Uri.parse("${API.sharePasswordIntelliVault}$id/"),
+        headers: {'Authorization': 'Token $token'},
+        body: {"password": accessPassword},
+      );
+
+      if (res.statusCode == 201) {
+        var responseBodyOfGetSharedPassword = jsonDecode(res.body);
+        link = responseBodyOfGetSharedPassword["share_link"];
+        Uri uri = Uri.parse(link);
+        String code =
+            uri.pathSegments.where((segment) => segment.isNotEmpty).last;
+        return code;
+      } else {
+        // Show error snackbar
+        ScaffoldMessenger.of(Get.context!).showSnackBar(
+          const SnackBar(
+            content: Text("Error sharing password."),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return null;
+      }
+    } catch (errorMsg) {
+      // Show error snackbar
+      ScaffoldMessenger.of(Get.context!).showSnackBar(
+        SnackBar(
+          content: Text("Error: $errorMsg"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return null;
+    }
+  }
+
+  // ignore: non_constant_identifier_names
   void _addRow(String login_username, String login_password) {
     setState(() {
       SharedPasswordItem model = SharedPasswordItem(
@@ -54,56 +227,174 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
     });
   }
 
-  deletePassword(int id) async {
+  Future<void> getSharedPassword(String link, String accessPassword) async {
+    SharedModel sharedModel;
     try {
-      var resultResponse = await Get.dialog(AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Delete Password",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        content: const Text("Are you sure\nYou want to delete password?"),
-        actions: [
-          TextButton(
-              onPressed: () {
-                Get.back();
-              },
-              child: const Text(
-                "No",
-                style: TextStyle(color: Colors.blue),
-              )),
-          TextButton(
-              onPressed: () {
-                Get.back(result: "deleted");
-              },
-              child: const Text(
-                "Yes",
-                style: TextStyle(color: Colors.red),
-              ))
-        ],
-      ));
+      String? token = await RememberUserPrefs.readToken();
 
-      if (resultResponse == "deleted") {
-        String? token = await RememberUserPrefs.readToken();
+      var res = await http.post(
+        Uri.parse("${API.sharedPasswordIntelliVault}$link/"),
+        headers: {'Authorization': 'Token $token'},
+        body: {"password": accessPassword},
+      );
 
-        var res = await http
-            .delete(Uri.parse("${API.passwordInfoIntelliVault}$id/"), headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Token $token'
-        });
+      if (res.statusCode == 200) {
+        var responseBodyOfGetSharedPassword = jsonDecode(res.body);
 
-        if (res.statusCode == 204) {
-          Fluttertoast.showToast(msg: "Deleted password");
-          setState(() {});
-        }
+        sharedModel = SharedModel.fromJson(responseBodyOfGetSharedPassword);
+        _addRow(
+          sharedModel.item.login_username,
+          sharedModel.item.login_password,
+        );
+
+        // Show success snackbar
+        ScaffoldMessenger.of(Get.context!).showSnackBar(
+          const SnackBar(
+            content: Text("Shared password accessed successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Show error snackbar
+        ScaffoldMessenger.of(Get.context!).showSnackBar(
+          const SnackBar(
+            content: Text("Error accessing shared password."),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
-    } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
+    } catch (errorMsg) {
+      // Show error snackbar
+      ScaffoldMessenger.of(Get.context!).showSnackBar(
+        SnackBar(
+          content: Text("Error: $errorMsg"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  Future<List<Password1>> getPassword1() async {
-    List<Password1> listOfPassword = [];
+  Future<void> accessSharedPassword() async {
+    try {
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15), // Rounded corners
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.lock, color: Colors.blue),
+                SizedBox(width: 8),
+                Text(
+                  "Access Shared Password",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 10),
+                  Text(
+                      "Enter the shared code and access password to retrieve the shared password.",
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: sharedLinkController,
+                    validator: (value) =>
+                        value!.isEmpty ? "Please enter the shared code" : null,
+                    decoration: InputDecoration(
+                      labelText: "Shared Code",
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: sharedAccessPasswordController,
+                    obscureText: true,
+                    validator: (value) => value!.isEmpty
+                        ? "Please enter the access password"
+                        : null,
+                    decoration: InputDecoration(
+                      labelText: "Access Password",
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  sharedAccessPasswordController.clear();
+                  sharedLinkController.clear();
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  "Cancel",
+                  style:
+                      TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () async {
+                  if (formKey.currentState!.validate()) {
+                    getSharedPassword(
+                      sharedLinkController.text.trim(),
+                      sharedAccessPasswordController.text.trim(),
+                    );
+                    sharedAccessPasswordController.clear();
+                    sharedLinkController.clear();
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text(
+                  "Access",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      // Show error snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${e.toString()}"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Future<void> fetchPasswords() async {
     try {
       String? token = await RememberUserPrefs.readToken();
 
@@ -115,642 +406,559 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen> {
 
       if (res.statusCode == 200) {
         var responseBodyOfGetPassword = jsonDecode(res.body);
-
+        List<Password1> fetchedPasswords = [];
         for (var eachPassword in (responseBodyOfGetPassword as List)) {
-          listOfPassword.add(Password1.fromJson(eachPassword));
+          fetchedPasswords.add(Password1.fromJson(eachPassword));
         }
+        setState(() {
+          passwords = fetchedPasswords;
+          isLoadingPasswords = false;
+        });
       } else {
-        Fluttertoast.showToast(msg: "Error occured executing query");
+        setState(() {
+          isLoadingPasswords = false;
+        });
+        //showSnackbar(context, "Error occurred executing query");
       }
     } catch (errorMsg) {
       print(errorMsg);
-    }
-
-    return listOfPassword;
-  }
-
-  getSharedPassword(String link, String access_password) async {
-    SharedModel sharedModel;
-    try {
-      String? token = await RememberUserPrefs.readToken();
-
-      var res = await http.post(
-          Uri.parse("${API.sharedPasswordIntelliVault}$link/"),
-          headers: {'Authorization': 'Token $token'},
-          body: {"password": access_password});
-
-      if (res.statusCode == 200) {
-        var responseBodyOfGetSharedPassword = jsonDecode(res.body);
-
-        sharedModel = SharedModel.fromJson(responseBodyOfGetSharedPassword);
-        _addRow(
-            sharedModel.item.login_username, sharedModel.item.login_password);
-      } else {
-        Fluttertoast.showToast(msg: "Error accesing shared password");
-      }
-    } catch (errorMsg) {
-      print(errorMsg);
+      setState(() {
+        isLoadingPasswords = false;
+      });
+      showSnackbar(context, "An error occurred. Please try again.");
     }
   }
 
-  Future<String?> sharingPassword(int id, String access_password) async {
-    String link;
-    try {
-      String? token = await RememberUserPrefs.readToken();
-
-      var res = await http.post(
-          Uri.parse("${API.sharePasswordIntelliVault}$id/"),
-          headers: {'Authorization': 'Token $token'},
-          body: {"password": access_password});
-
-      if (res.statusCode == 201) {
-        var responseBodyOfGetSharedPassword = jsonDecode(res.body);
-        link = responseBodyOfGetSharedPassword["share_link"];
-        Uri uri = Uri.parse(link);
-        String code =
-            uri.pathSegments.where((segment) => segment.isNotEmpty).last;
-        return code;
-      } else {
-        Fluttertoast.showToast(msg: "Error sharing password");
-        return null;
-      }
-    } catch (errorMsg) {
-      print(errorMsg);
-    }
-    return null;
-  }
-
-  accessSharedPassword() async {
-    try {
-      await Get.dialog(AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Access Shared Password",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: sharedLinkController,
-                validator: (value) {
-                  if (value == "") {
-                    return "Please write shared code";
-                  } else {
-                    return null;
-                  }
-                },
-                decoration: const InputDecoration(hintText: "Shared Code"),
-              ),
-              TextFormField(
-                controller: sharedAccessPasswordController,
-                validator: (value) {
-                  if (value == "") {
-                    return "Please write access password";
-                  } else {
-                    return null;
-                  }
-                },
-                decoration: const InputDecoration(hintText: "Access Password"),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () {
-                sharedAccessPasswordController.clear();
-                sharedLinkController.clear();
-                Get.back();
-              },
-              child: const Text(
-                "Cancel",
-                style: TextStyle(color: Colors.blue),
-              )),
-          TextButton(
-              onPressed: () async {
-                if (formKey.currentState!.validate()) {
-                  Future.delayed(const Duration(milliseconds: 1000), () {
-                    getSharedPassword(
-                        sharedLinkController.text.toString().trim(),
-                        sharedAccessPasswordController.text.toString().trim());
-                    sharedAccessPasswordController.clear();
-                    sharedLinkController.clear();
-
-                    Get.back();
-                  });
-                }
-              },
-              child: const Text(
-                "Access",
-                style: TextStyle(color: Colors.green),
-              ))
-        ],
-      ));
-    } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
-    }
-  }
-
-  sharePassword(int id) async {
-    String? sharedLink;
-    try {
-      await Get.dialog(StatefulBuilder(builder: ((context, setState) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text(
-            "Share Password",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: sharingPasswordController,
-                  validator: (value) {
-                    if (value == "") {
-                      return "Please write access password";
-                    } else {
-                      return null;
-                    }
-                  },
-                  decoration:
-                      const InputDecoration(hintText: "Access Password"),
-                ),
-                if (sharedLink != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16.0),
-                    child: SelectableText(
-                      "Access Code : $sharedLink",
-                      style: const TextStyle(color: Colors.green),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () {
-                  sharedAccessPasswordController.clear();
-                  sharedLinkController.clear();
-                  setState(() {
-                    sharedLink = null;
-                  });
-                  Get.back();
-                },
-                child: const Text(
-                  "Cancel",
-                  style: TextStyle(color: Colors.blue),
-                )),
-            TextButton(
-                onPressed: () async {
-                  if (formKey.currentState!.validate()) {
-                    Future.delayed(const Duration(milliseconds: 1000),
-                        () async {
-                      String? result = await sharingPassword(
-                        id,
-                        sharingPasswordController.text.toString().trim(),
-                      );
-                      setState(() {
-                        sharedLink = result;
-                      });
-                      sharingPasswordController.clear();
-                    });
-                  }
-                },
-                child: const Text(
-                  "Share",
-                  style: TextStyle(color: Colors.green),
-                ))
-          ],
-        );
-      })));
-    } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    RememberUserPrefs().checkTokenValidity();
+  void showSnackbar(BuildContext context, String message) {
+    final snackBar = SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.red,
+      duration: const Duration(seconds: 3),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ElevatedButton(
-                  onPressed: () {
-                    navController.navigateToFragment(6);
-                  },
-                  child: Text("Press Here")),
-              const SizedBox(
-                height: 16,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  "Passwords",
-                  style: TextStyle(
-                      color: primary1Color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20),
-                ),
-              ),
-              FutureBuilder(
-                  future: getPassword1(),
-                  builder:
-                      (context, AsyncSnapshot<List<Password1>> dataSnapShot) {
-                    if (dataSnapShot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-
-                    if (dataSnapShot.data == null) {
-                      return const Center(
-                        child: Text(
-                          "No password found",
-                          style: TextStyle(color: Colors.grey),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text("Passwords"),
+        backgroundColor: primary1Color,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () async {
+              await Get.to(() => const Add2PasswordScreen())?.then((result) {
+                if (result == 'refresh') {
+                  setState(() {
+                    fetchPasswords();
+                  });
+                }
+              });
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Main Passwords Section
+          Expanded(
+            child: isLoadingPasswords
+                ? const Center(child: CircularProgressIndicator())
+                : passwords.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.vpn_key_outlined,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              "Oh no, no passwords saved!",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Save your first password to get started!",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () async {
+                                await Get.to(() => const Add2PasswordScreen())
+                                    ?.then((result) {
+                                  if (result == 'refresh') {
+                                    setState(() {
+                                      fetchPasswords();
+                                    });
+                                  }
+                                });
+                              },
+                              child: const Text("Create Password"),
+                            ),
+                          ],
                         ),
-                      );
-                    }
-
-                    if (dataSnapShot.data!.isNotEmpty) {
-                      return ListView.builder(
-                        itemCount: dataSnapShot.data!.length,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        scrollDirection: Axis.vertical,
+                      )
+                    : ListView.builder(
+                        itemCount: passwords.length,
                         itemBuilder: (context, index) {
-                          isObsecureV2.add(true.obs);
-                          Password1 eachPassword = dataSnapShot.data![index];
+                          // Boolean to track visibility state
+                          bool isPasswordVisible = false;
 
-                          return Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            margin: EdgeInsets.fromLTRB(
-                                0,
-                                index == 0 ? 16 : 8,
-                                0,
-                                index == dataSnapShot.data!.length - 1
-                                    ? 16
-                                    : 8),
-                            decoration: BoxDecoration(
-                              border: Border.symmetric(
-                                  horizontal: BorderSide(color: primary1Color)),
-                              color: Colors.white,
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                    child: Padding(
-                                  padding: const EdgeInsets.only(left: 15),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Padding(
-                                              padding: const EdgeInsets.only(
-                                                  right: 12),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    eachPassword
-                                                        .login_username!,
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                        fontSize: 14,
-                                                        color: Colors.black,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                ],
-                                              )),
-                                          const Spacer(),
-                                          Obx(
-                                            () => SizedBox(
-                                              width: 80,
-                                              child: Text(
-                                                maxLines: 3,
-                                                overflow: TextOverflow.ellipsis,
-                                                isObsecureV2[index].value
-                                                    ? eachPassword
-                                                        .decrypted_password
-                                                        .toString()
-                                                        .replaceAll(
-                                                            RegExp(r"."), "•")
-                                                    : eachPassword
-                                                        .decrypted_password
-                                                        .toString(),
-                                                style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.black,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            width: 10,
-                                          ),
-                                          Obx(() => GestureDetector(
-                                                onTap: () {
-                                                  isObsecureV2[index].value =
-                                                      !isObsecureV2[index]
-                                                          .value;
-                                                },
-                                                child: Icon(
-                                                  isObsecureV2[index].value
-                                                      ? Icons.visibility_off
-                                                      : Icons.visibility,
-                                                  color: Colors.black,
-                                                  size: 20,
-                                                ),
-                                              )),
-                                          const SizedBox(
-                                            width: 10,
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              await Clipboard.setData(
-                                                  ClipboardData(
-                                                      text: eachPassword
-                                                          .decrypted_password
-                                                          .toString()));
-                                              Fluttertoast.showToast(
-                                                  msg: "Copied to clipboard");
-                                            },
-                                            child: const Icon(
-                                              Icons.copy,
-                                              size: 20,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            width: 10,
-                                          ),
-                                          DropdownButtonHideUnderline(
-                                            child: DropdownButton2<String>(
-                                              customButton: const Icon(
-                                                Icons.menu,
-                                                size: 20,
-                                              ),
-                                              items: items
-                                                  .map((String item) =>
-                                                      DropdownMenuItem(
-                                                        value: item,
-                                                        child: Icon(
-                                                          icons[items
-                                                              .indexOf(item)],
-                                                          size: 20,
-                                                          color: colors[items
-                                                              .indexOf(item)],
-                                                        ),
-                                                      ))
-                                                  .toList(),
-                                              value: selectedValue,
-                                              onChanged: (String? value) {
-                                                if (value == "Update") {
-                                                  Get.to(
-                                                      const AddPassword1Screen(),
-                                                      arguments: {
-                                                        'id': eachPassword.id,
-                                                        'vault':
-                                                            eachPassword.vault,
-                                                        'username': eachPassword
-                                                            .login_username,
-                                                        'password': eachPassword
-                                                            .decrypted_password
-                                                      });
-                                                } else if (value == "Share") {
-                                                  sharePassword(
-                                                      eachPassword.id!);
-                                                } else {
-                                                  deletePassword(
-                                                      eachPassword.id!);
-                                                }
-                                              },
-                                              buttonStyleData:
-                                                  const ButtonStyleData(
-                                                height: 40,
-                                                width: 45,
-                                              ),
-                                              dropdownStyleData:
-                                                  DropdownStyleData(
-                                                maxHeight: 200,
-                                                width: 50,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  color: Colors.white,
-                                                ),
-                                                offset: const Offset(-10, 0),
-                                              ),
-                                              menuItemStyleData:
-                                                  const MenuItemStyleData(
-                                                height: 40,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            width: 20,
-                                          )
-                                        ],
-                                      ),
-                                    ],
+                          return StatefulBuilder(
+                            builder: (context, setState) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 4.0, horizontal: 8.0),
+                                child: Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
                                   ),
-                                )),
-                              ],
-                            ),
+                                  elevation: 2,
+                                  color: Colors.white,
+                                  child: ListTile(
+                                    leading: const CircleAvatar(
+                                      backgroundColor: Colors.grey,
+                                      child:
+                                          Icon(Icons.lock, color: Colors.white),
+                                    ),
+                                    title: Text(
+                                      passwords[index].login_username!,
+                                      style: const TextStyle(
+                                          fontSize: 14.0,
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                    subtitle: Text(
+                                      isPasswordVisible
+                                          ? passwords[index].decrypted_password!
+                                          : '••••••••',
+                                      style: const TextStyle(
+                                          fontSize: 12.0, color: Colors.grey),
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: Icon(
+                                            isPasswordVisible
+                                                ? Icons.visibility
+                                                : Icons.visibility_off,
+                                            color: Colors.grey,
+                                          ),
+                                          onPressed: () {
+                                            // Toggle password visibility
+                                            setState(() {
+                                              isPasswordVisible =
+                                                  !isPasswordVisible;
+                                            });
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.more_vert,
+                                              color: Colors.grey),
+                                          onPressed: () {
+                                            showModalBottomSheet(
+                                              context: context,
+                                              shape:
+                                                  const RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.vertical(
+                                                  top: Radius.circular(
+                                                      20), // Add curved edges
+                                                ),
+                                              ),
+                                              builder: (context) => Container(
+                                                padding:
+                                                    const EdgeInsets.all(16),
+                                                decoration: const BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.vertical(
+                                                    top: Radius.circular(
+                                                        20), // Curved edges match the shape
+                                                  ),
+                                                  color: Colors
+                                                      .white, // Background color
+                                                ),
+                                                child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      // Add a handle to indicate draggable bottom sheet
+                                                      Container(
+                                                        width: 50,
+                                                        height: 5,
+                                                        margin: const EdgeInsets
+                                                            .only(bottom: 16),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              Colors.grey[300],
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(10),
+                                                        ),
+                                                      ),
+
+                                                      // Copy Username Option
+                                                      ListTile(
+                                                        leading: Icon(
+                                                            Icons.copy,
+                                                            color: Colors
+                                                                .grey[700]),
+                                                        title: const Text(
+                                                          "Copy Username",
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                        ),
+                                                        onTap: () async {
+                                                          await Clipboard
+                                                              .setData(
+                                                            ClipboardData(
+                                                                text: passwords[
+                                                                        index]
+                                                                    .login_username
+                                                                    .toString()),
+                                                          );
+                                                          ScaffoldMessenger.of(
+                                                                  context)
+                                                              .showSnackBar(
+                                                            const SnackBar(
+                                                              content: Text(
+                                                                  "Username copied to clipboard"),
+                                                              duration:
+                                                                  Duration(
+                                                                      seconds:
+                                                                          2),
+                                                            ),
+                                                          );
+                                                          Navigator.pop(
+                                                              context);
+                                                        },
+                                                      ),
+                                                      const Divider(
+                                                          color: Colors.grey),
+
+                                                      // Copy Password Option
+                                                      ListTile(
+                                                        leading: Icon(
+                                                            Icons.copy,
+                                                            color: Colors
+                                                                .grey[700]),
+                                                        title: const Text(
+                                                          "Copy Password",
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                        ),
+                                                        onTap: () async {
+                                                          await Clipboard
+                                                              .setData(
+                                                            ClipboardData(
+                                                                text: passwords[
+                                                                        index]
+                                                                    .decrypted_password
+                                                                    .toString()),
+                                                          );
+                                                          ScaffoldMessenger.of(
+                                                                  context)
+                                                              .showSnackBar(
+                                                            const SnackBar(
+                                                              content: Text(
+                                                                  "Password copied to clipboard"),
+                                                              duration:
+                                                                  Duration(
+                                                                      seconds:
+                                                                          2),
+                                                            ),
+                                                          );
+                                                          Navigator.pop(
+                                                              context);
+                                                        },
+                                                      ),
+                                                      const Divider(
+                                                          color: Colors.grey),
+
+                                                      // Share Option
+                                                      ListTile(
+                                                        leading: Icon(
+                                                            Icons.share,
+                                                            color: Colors
+                                                                .grey[700]),
+                                                        title: const Text(
+                                                          "Share",
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                        ),
+                                                        onTap: () {
+                                                          Navigator.pop(
+                                                              context);
+                                                          sharePassword(
+                                                              passwords[index]
+                                                                  .id!);
+                                                        },
+                                                      ),
+                                                    ]),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
-                      );
-                    } else {
-                      return const Center(
-                        child: Text(
-                          "Empty, No Data",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      );
-                    }
-                  }),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  "Shared Passwords",
-                  style: TextStyle(
-                      color: primary1Color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20),
-                ),
-              ),
-              sharedPasswords(context),
-            ],
-          ),
-        ),
-        floatingActionButton: SpeedDial(
-          animatedIcon: AnimatedIcons.menu_close,
-          backgroundColor: primary1Color,
-          overlayColor: Colors.black,
-          overlayOpacity: 0.5,
-          children: [
-            SpeedDialChild(
-              child: Icon(
-                Icons.add,
-                color: primary1Color,
-              ),
-              onTap: () => Get.to(const AddPassword1Screen()),
-            ),
-            SpeedDialChild(
-              child: Icon(
-                Icons.share,
-                color: primary1Color,
-              ),
-              onTap: () {
-                accessSharedPassword();
-              },
-            ),
-          ],
-        ));
-  }
-
-  Widget sharedPasswords(context) {
-    return rows.isNotEmpty
-        ? ListView.builder(
-            itemCount: rows.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            scrollDirection: Axis.vertical,
-            itemBuilder: (context, index) {
-              isObsecureV4.add(true.obs);
-
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                margin: EdgeInsets.fromLTRB(0, index == 0 ? 16 : 8, 0,
-                    index == rows.length - 1 ? 16 : 8),
-                decoration: BoxDecoration(
-                  border: Border.symmetric(
-                      horizontal: BorderSide(color: primary1Color)),
-                  color: Colors.white,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                        child: Padding(
-                      padding: const EdgeInsets.only(left: 15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Padding(
-                                  padding: const EdgeInsets.only(right: 12),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        rows[index].login_username,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  )),
-                              const Spacer(),
-                              Obx(
-                                () => SizedBox(
-                                  width: 80,
-                                  child: Text(
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                    isObsecureV4[index].value
-                                        ? rows[index]
-                                            .login_password
-                                            .toString()
-                                            .replaceAll(RegExp(r"."), "•")
-                                        : rows[index].login_password.toString(),
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(
-                                width: 10,
-                              ),
-                              Obx(() => GestureDetector(
-                                    onTap: () {
-                                      isObsecureV4[index].value =
-                                          !isObsecureV4[index].value;
-                                    },
-                                    child: Icon(
-                                      isObsecureV4[index].value
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
-                                      color: Colors.black,
-                                      size: 20,
-                                    ),
-                                  )),
-                              const SizedBox(
-                                width: 10,
-                              ),
-                              GestureDetector(
-                                onTap: () async {
-                                  await Clipboard.setData(ClipboardData(
-                                      text: rows[index]
-                                          .login_password
-                                          .toString()));
-                                  Fluttertoast.showToast(
-                                      msg: "Copied to clipboard");
-                                },
-                                child: const Icon(
-                                  Icons.copy,
-                                  size: 20,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              const SizedBox(
-                                width: 50,
-                              ),
-                            ],
-                          ),
-                        ],
                       ),
-                    )),
+          ),
+          // Shared Passwords Section
+          Container(
+            decoration: BoxDecoration(
+              color: primary1Color, // AppBar-like background color
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12.0),
+                topRight: Radius.circular(12.0),
+              ),
+            ),
+            padding:
+                const EdgeInsets.symmetric(vertical: 0.0, horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.share,
+                      color: Colors.white, // White icon to match app bar theme
+                      size: 22.0,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Shared Passwords',
+                      style: TextStyle(
+                        color:
+                            Colors.white, // White text to match app bar theme
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
-              );
-            },
-          )
-        : Container(
-            padding: const EdgeInsets.only(top: 10),
-            child: const Center(
-              child: Text(
-                "No shared passwords",
-                style: TextStyle(color: Colors.grey),
-              ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.add, // Add icon
+                    color: Colors.white, // White icon to match app bar theme
+                  ),
+                  onPressed: () {
+                    accessSharedPassword();
+                  },
+                ),
+              ],
             ),
-          );
+          ),
+          Container(
+            color: Colors.grey[200],
+            padding:
+                const EdgeInsets.symmetric(vertical: 0.0, horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                if (!isLoadingSharedPasswords)
+                  const Center(child: CircularProgressIndicator())
+                else if (rows.isEmpty)
+                  Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.lock_outline,
+                          size: 50.0,
+                          color: primary1Color.withOpacity(0.6),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'No shared passwords yet',
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        ElevatedButton(
+                          onPressed: () {
+                            accessSharedPassword();
+                          },
+                          child: const Text('Add Shared Password'),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  SizedBox(
+                    height: 135.0, // Fixed height for scrollable section
+                    child: ListView.builder(
+                      itemCount: rows.length,
+                      itemBuilder: (context, index) {
+                        bool isVisible =
+                            false; // Track visibility for each password
+
+                        return StatefulBuilder(
+                          builder: (context, setState) => ListTile(
+                            leading:
+                                const Icon(Icons.share, color: Colors.grey),
+                            title: Text(rows[index].login_username),
+                            subtitle: Text(
+                              isVisible
+                                  ? rows[index].login_password // Show password
+                                  : "••••••••", // Masked password
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    isVisible
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      isVisible =
+                                          !isVisible; // Toggle visibility
+                                    });
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.copy),
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(
+                                              20), // Add curved edges
+                                        ),
+                                      ),
+                                      builder: (context) => Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: const BoxDecoration(
+                                          borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(
+                                                20), // Curved edges match the shape
+                                          ),
+                                          color:
+                                              Colors.white, // Background color
+                                        ),
+                                        child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              // Add a handle to indicate draggable bottom sheet
+                                              Container(
+                                                width: 50,
+                                                height: 5,
+                                                margin: const EdgeInsets.only(
+                                                    bottom: 16),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey[300],
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+
+                                              // Copy Username Option
+                                              ListTile(
+                                                leading: Icon(Icons.copy,
+                                                    color: Colors.grey[700]),
+                                                title: const Text(
+                                                  "Copy Username",
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                                onTap: () async {
+                                                  await Clipboard.setData(
+                                                    ClipboardData(
+                                                        text: rows[index]
+                                                            .login_username
+                                                            .toString()),
+                                                  );
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                          "Username copied to clipboard"),
+                                                      duration:
+                                                          Duration(seconds: 2),
+                                                    ),
+                                                  );
+                                                  Navigator.pop(context);
+                                                },
+                                              ),
+                                              const Divider(color: Colors.grey),
+
+                                              // Copy Password Option
+                                              ListTile(
+                                                leading: Icon(Icons.copy,
+                                                    color: Colors.grey[700]),
+                                                title: const Text(
+                                                  "Copy Password",
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                                onTap: () async {
+                                                  await Clipboard.setData(
+                                                    ClipboardData(
+                                                        text: rows[index]
+                                                            .login_password
+                                                            .toString()),
+                                                  );
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                          "Password copied to clipboard"),
+                                                      duration:
+                                                          Duration(seconds: 2),
+                                                    ),
+                                                  );
+                                                  Navigator.pop(context);
+                                                },
+                                              ),
+                                            ]),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  )
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

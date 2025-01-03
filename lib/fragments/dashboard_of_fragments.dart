@@ -2,18 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:password_manager/constants/constant.dart';
 import 'package:password_manager/controllers/navigation_controller.dart';
-import 'package:password_manager/fragments/file1_fragment_screen.dart';
 import 'package:password_manager/fragments/file_fragment_screen.dart';
-import 'package:password_manager/fragments/home1_fragment_screen.dart';
 import 'package:password_manager/fragments/home_fragment_screen.dart';
 import 'package:password_manager/fragments/password_fragment_screen.dart';
-import 'package:password_manager/fragments/team_fragment_screen.dart';
 import 'package:password_manager/fragments/settings_fragment_screen.dart';
-import 'package:password_manager/fragments/team_info_screen.dart';
-import 'package:password_manager/fragments/test_fragment_screen.dart';
-import 'package:password_manager/fragments/vault1_fragment_screen.dart';
+import 'package:password_manager/fragments/team_fragment_screen.dart';
 import 'package:password_manager/fragments/vault_fragment_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 
@@ -24,13 +18,10 @@ class DashboardOfFragments extends StatelessWidget {
   final List<Widget> _fragmentScreens = [
     const Home1FragmentScreen(),
     File1FragmentScreen(),
-    TeamsInfoFragmentScreen(),
-    Vault1FragmentScreen(),
+    const TeamsInfoFragmentScreen(),
+    const Vault1FragmentScreen(),
     const PasswordFragmentScreen(),
     const SettingsFragmentScreen(),
-    Vault1FragmentScreen(),
-    const HomeFragmentScreen(),
-    const FileFragmentScreen(),
   ];
   final List _navigationButtonsProperties = [
     {
@@ -67,6 +58,7 @@ class DashboardOfFragments extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    int lastValidIndex = 0; // Initialize to the first index as default
     return GetBuilder(
       init: CurrentUser(),
       initState: (currentState) {
@@ -82,16 +74,18 @@ class DashboardOfFragments extends StatelessWidget {
                   navController.indexNumber.value < _fragmentScreens.length) {
                 return _fragmentScreens[navController.indexNumber.value];
               } else {
-                return Center(child: Text("Invalid screen index"));
+                return const Center(child: Text("Invalid screen index"));
               }
             }),
           ),
           bottomNavigationBar: Obx(
             () => BottomNavigationBar(
-              currentIndex: navController.indexNumber.value <
-                      _navigationButtonsProperties.length
-                  ? navController.indexNumber.value
-                  : 0,
+              currentIndex: (navController.indexNumber.value >= 0 &&
+                      navController.indexNumber.value <
+                          _navigationButtonsProperties.length)
+                  ? (lastValidIndex = navController
+                      .indexNumber.value) // Update last valid index
+                  : lastValidIndex, // Use last valid index if out of bounds
               onTap: (value) {
                 if (value < _navigationButtonsProperties.length) {
                   navController.navigateToFragment(value);

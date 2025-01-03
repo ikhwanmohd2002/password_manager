@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -6,7 +8,6 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
-import 'package:password_manager/fragments/dashboard_of_fragments.dart';
 import 'package:password_manager/model/password1.dart';
 import 'package:password_manager/user_preferences/userPreferences.dart';
 import 'package:password_strength_checker/password_strength_checker.dart';
@@ -14,27 +15,30 @@ import 'package:password_strength_checker/password_strength_checker.dart';
 class VaultItem {
   final int id;
   final String name;
+  final int? team;
 
-  VaultItem({required this.id, required this.name});
+  VaultItem({required this.id, required this.name, this.team});
 
   factory VaultItem.fromJson(Map<String, dynamic> json) {
     return VaultItem(
       id: json['id'],
       name: json['name'],
+      team: json['team'],
     );
   }
 }
 
-class Add1PasswordScreen extends StatefulWidget {
-  const Add1PasswordScreen({super.key});
+class Add2PasswordScreen extends StatefulWidget {
+  const Add2PasswordScreen({super.key});
 
   @override
-  State<Add1PasswordScreen> createState() => _Add1PasswordScreenState();
+  State<Add2PasswordScreen> createState() => _Add2PasswordScreenState();
 }
 
-class _Add1PasswordScreenState extends State<Add1PasswordScreen> {
+class _Add2PasswordScreenState extends State<Add2PasswordScreen> {
   List<VaultItem> vaultItems = [];
   int? vaultID;
+  int? teamID;
   var formKey = GlobalKey<FormState>();
   var usernameController = TextEditingController();
   var passwordController = TextEditingController();
@@ -44,20 +48,28 @@ class _Add1PasswordScreenState extends State<Add1PasswordScreen> {
   @override
   void initState() {
     super.initState();
-    fetchVaults();
+
     final hasArguments = Get.arguments != null;
     final arguments = hasArguments ? Get.arguments : {};
     final String? password = hasArguments ? arguments['password'] : null;
     final String? username = hasArguments ? arguments['username'] : null;
     vaultID = hasArguments ? arguments['vault'] : null;
+    teamID = hasArguments ? arguments['team'] : null;
+
+    fetchVaults(teamID);
     if (hasArguments) {
-      passNotifier.value = PasswordStrength.calculate(text: password!);
+      String lol = "";
+      if (password == null) {
+        passNotifier.value = PasswordStrength.calculate(text: lol);
+      } else {
+        passNotifier.value = PasswordStrength.calculate(text: password);
+      }
     }
     passwordController = TextEditingController(text: password ?? "");
     usernameController = TextEditingController(text: username ?? "");
   }
 
-  Future<void> fetchVaults() async {
+  Future<void> fetchVaults(int? teamID) async {
     try {
       String? token = await RememberUserPrefs.readToken();
 
@@ -74,14 +86,16 @@ class _Add1PasswordScreenState extends State<Add1PasswordScreen> {
         final List<dynamic> data = json.decode(response.body);
 
         setState(() {
-          vaultItems =
-              data.map<VaultItem>((item) => VaultItem.fromJson(item)).toList();
+          vaultItems = data
+              .map<VaultItem>((item) => VaultItem.fromJson(item))
+              .where((item) => item.team == teamID)
+              .toList();
         });
       } else {
         throw Exception('Failed to load items');
       }
     } catch (e) {
-      print('Error fetching data: $e');
+      throw Exception('Failed to load items');
     }
   }
 
@@ -94,7 +108,7 @@ class _Add1PasswordScreenState extends State<Add1PasswordScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: primary1Color,
-        title: Text(hasArguments ? "Update Password" : "Add Password"),
+        title: Text(id != null ? "Update Login Info" : "Add Login Info"),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -160,34 +174,35 @@ class _Add1PasswordScreenState extends State<Add1PasswordScreen> {
                 const SizedBox(height: 16),
 
                 // Vault Dropdown Field
-                DropdownButtonFormField<int>(
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.grey),
+                if (teamID == null)
+                  DropdownButtonFormField<int>(
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Colors.grey),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      hintText: "Choose a vault",
+                      hintStyle: const TextStyle(color: Colors.grey),
                     ),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    hintText: "Choose a vault",
-                    hintStyle: const TextStyle(color: Colors.grey),
+                    hint: const Text('Select Vault'),
+                    value: vaultID,
+                    onChanged: (int? newValue) {
+                      setState(() {
+                        vaultID = newValue;
+                      });
+                    },
+                    items:
+                        vaultItems.map<DropdownMenuItem<int>>((VaultItem item) {
+                      return DropdownMenuItem<int>(
+                        value: item.id,
+                        child: Text(item.name),
+                      );
+                    }).toList(),
+                    validator: (value) =>
+                        value == null ? "Please select a vault" : null,
                   ),
-                  hint: const Text('Select Vault'),
-                  value: vaultID,
-                  onChanged: (int? newValue) {
-                    setState(() {
-                      vaultID = newValue;
-                    });
-                  },
-                  items:
-                      vaultItems.map<DropdownMenuItem<int>>((VaultItem item) {
-                    return DropdownMenuItem<int>(
-                      value: item.id,
-                      child: Text(item.name),
-                    );
-                  }).toList(),
-                  validator: (value) =>
-                      value == null ? "Please select a vault" : null,
-                ),
                 const SizedBox(height: 24),
 
                 // Password Strength and Generate Button
@@ -245,8 +260,8 @@ class _Add1PasswordScreenState extends State<Add1PasswordScreen> {
                     ),
                     onPressed: () {
                       if (formKey.currentState!.validate()) {
-                        if (hasArguments) {
-                          updatePassword(id!);
+                        if (id != null) {
+                          updatePassword(id);
                         } else {
                           addPassword();
                         }
@@ -294,8 +309,9 @@ class _Add1PasswordScreenState extends State<Add1PasswordScreen> {
         Fluttertoast.showToast(msg: "Error sharing password");
         return null;
       }
-    } catch (errorMsg) {}
-    return null;
+    } catch (errorMsg) {
+      throw Exception('Failed to load items');
+    }
   }
 
   addPassword() async {
@@ -315,13 +331,23 @@ class _Add1PasswordScreenState extends State<Add1PasswordScreen> {
 
       if (res.statusCode == 201) {
         // Show success snackbar
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Password added successfully"),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        if (teamID == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Password Added Successfullyy"),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Request to add password successfully sent"),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
 
         setState(() {
           usernameController.clear();
@@ -329,15 +355,15 @@ class _Add1PasswordScreenState extends State<Add1PasswordScreen> {
         });
 
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.to(DashboardOfFragments());
+          Get.back();
         });
       } else {
         // Show error snackbar
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Failed to add password"),
+          const SnackBar(
+            content: Text("Failed to add password"),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -372,10 +398,10 @@ class _Add1PasswordScreenState extends State<Add1PasswordScreen> {
       if (res.statusCode == 200) {
         // Show success snackbar
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Password updated successfully"),
+          const SnackBar(
+            content: Text("Password updated successfully"),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
           ),
         );
 
@@ -385,15 +411,33 @@ class _Add1PasswordScreenState extends State<Add1PasswordScreen> {
         });
 
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.to(DashboardOfFragments(), arguments: 0);
+          Get.back(result: 'refresh');
+        });
+      } else if (res.statusCode == 201) {
+        // Show success snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Request to update password successfully sent"),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        setState(() {
+          usernameController.clear();
+          passwordController.clear();
+        });
+
+        Future.delayed(const Duration(milliseconds: 2000), () {
+          Get.back(result: 'refresh');
         });
       } else {
         // Show error snackbar
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Failed to update password"),
+          const SnackBar(
+            content: Text("Failed to update password"),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
           ),
         );
       }

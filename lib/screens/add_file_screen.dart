@@ -1,13 +1,12 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
-import 'package:password_manager/fragments/dashboard_of_fragments.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 import 'package:password_manager/user_preferences/userPreferences.dart';
@@ -16,28 +15,31 @@ import 'package:http/http.dart' as http;
 class VaultItem {
   final int id;
   final String name;
+  final int? team;
 
-  VaultItem({required this.id, required this.name});
+  VaultItem({required this.id, required this.name, this.team});
 
   factory VaultItem.fromJson(Map<String, dynamic> json) {
     return VaultItem(
       id: json['id'],
       name: json['name'],
+      team: json['team'],
     );
   }
 }
 
-class AddFileScreen extends StatefulWidget {
-  const AddFileScreen({super.key});
+class Add2FileScreen extends StatefulWidget {
+  const Add2FileScreen({super.key});
 
   @override
-  State<AddFileScreen> createState() => _AddFileScreenState();
+  State<Add2FileScreen> createState() => _Add2FileScreenState();
 }
 
-class _AddFileScreenState extends State<AddFileScreen> {
+class _Add2FileScreenState extends State<Add2FileScreen> {
   File? selectedFile;
   List<VaultItem> vaultItems = [];
   int? vaultID;
+  int? teamID;
   CurrentUser currentUser = Get.put(CurrentUser());
 
   var formKey = GlobalKey<FormState>();
@@ -79,49 +81,98 @@ class _AddFileScreenState extends State<AddFileScreen> {
       var res = await request.send();
 
       if (res.statusCode == 201) {
-        Fluttertoast.showToast(msg: "Added file");
+        if (teamID == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("File Added Successfullyy"),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Request to add file successfully sent"),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.to(DashboardOfFragments());
+          Get.back(result: 'refresh');
         });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Failed to add file"),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
-      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${e.toString()}"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
-  Future<void> fetchVaults() async {
+  Future<void> fetchVaults(int? teamID) async {
     try {
       String? token = await RememberUserPrefs.readToken();
 
       final response = await http.get(
-          Uri.parse(
-            API.vaultInfoIntelliVault,
-          ),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Token $token'
-          });
+        Uri.parse(API.vaultInfoIntelliVault),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Token $token',
+        },
+      );
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
 
         setState(() {
-          vaultItems =
-              data.map<VaultItem>((item) => VaultItem.fromJson(item)).toList();
+          vaultItems = data
+              .map<VaultItem>((item) => VaultItem.fromJson(item))
+              .where((item) => item.team == teamID)
+              .toList();
         });
       } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Failed to load vaults"),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
         throw Exception('Failed to load items');
       }
     } catch (e) {
-      print('Error fetching data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${e.toString()}"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
   @override
   void initState() {
     super.initState();
-    fetchVaults();
+    final hasArguments = Get.arguments != null;
+    final arguments = hasArguments ? Get.arguments : {};
+    vaultID = hasArguments ? arguments['vault'] : null;
+    teamID = hasArguments ? arguments['team'] : null;
+
+    fetchVaults(teamID);
   }
 
   @override
@@ -129,123 +180,116 @@ class _AddFileScreenState extends State<AddFileScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        centerTitle: true,
         backgroundColor: primary1Color,
-        title: Text("Add File"),
+        title: const Text("Add File"),
       ),
       body: SingleChildScrollView(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(30.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  FadeInUp(
-                      duration: const Duration(milliseconds: 1800),
-                      child: Form(
-                        key: formKey,
-                        child: Column(
-                          children: <Widget>[
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            DropdownButtonFormField<int>(
-                              validator: (value) {
-                                if (value == null) {
-                                  return "Please select vault";
-                                } else {
-                                  return null;
-                                }
-                              },
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: primary1Color, width: 1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: primary1Color, width: 2),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                              ),
-                              style: const TextStyle(
-                                fontSize: 15,
-                                color: Colors.black,
-                              ),
-                              hint: const Text('Select Vault'),
-                              value: vaultID,
-                              onChanged: (int? newValue) {
-                                setState(() {
-                                  vaultID = newValue;
-                                });
-                              },
-                              items: vaultItems
-                                  .map<DropdownMenuItem<int>>((VaultItem item) {
-                                return DropdownMenuItem<int>(
-                                  value: item.id,
-                                  child: Text(item.name),
-                                );
-                              }).toList(),
-                            ),
-                          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Form(
+                key: formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    //const SizedBox(height: 20),
+                    if (teamID == null)
+                      DropdownButtonFormField<int>(
+                        validator: (value) {
+                          if (value == null) {
+                            return "Please select a vault.";
+                          } else {
+                            return null;
+                          }
+                        },
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.grey[200],
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.grey[400]!),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(color: primary1Color, width: 2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          hintText: "Select Vault",
                         ),
-                      )),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  FadeInUp(
-                    duration: const Duration(milliseconds: 1800),
-                    child: Row(
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.black87,
+                        ),
+                        value: vaultID,
+                        onChanged: (int? newValue) {
+                          setState(() {
+                            vaultID = newValue;
+                          });
+                        },
+                        items: vaultItems
+                            .map<DropdownMenuItem<int>>((VaultItem item) {
+                          return DropdownMenuItem<int>(
+                            value: item.id,
+                            child: Text(item.name),
+                          );
+                        }).toList(),
+                      ),
+                    const SizedBox(height: 20),
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Flexible(
                           flex: 3,
-                          child: FadeInUp(
-                            duration: const Duration(milliseconds: 1800),
+                          child: SizedBox(
+                            width: double.infinity,
                             child: Container(
                               padding: const EdgeInsets.all(8.0),
-                              child: selectedFile != null
-                                  ? Text(
-                                      'File: ${selectedFile!.path}',
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    )
-                                  : Text('No file selected',
-                                      style:
-                                          TextStyle(color: Colors.grey[700])),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                border: Border.all(color: Colors.grey[400]!),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                selectedFile != null
+                                    ? selectedFile!.path.split('/').last
+                                    : 'No file selected',
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                style: TextStyle(
+                                  color: selectedFile != null
+                                      ? Colors.black87
+                                      : Colors.grey[600],
+                                ),
+                              ),
                             ),
                           ),
                         ),
+                        const SizedBox(
+                          width: 20,
+                        ),
                         Flexible(
-                          flex: 1,
-                          child: FadeInUp(
-                            duration: const Duration(milliseconds: 1800),
-                            child: InkWell(
-                              onTap: () {
-                                pickFile();
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(8),
-                                height: 35,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    gradient: LinearGradient(colors: [
-                                      primary2Color,
-                                      primary1Color,
-                                    ])),
-                                child: const Center(
-                                  child: Text(
-                                    "Select File",
-                                    style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold),
-                                  ),
+                          flex: 2,
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: pickFile,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primary1Color,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                "Browse",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
@@ -253,48 +297,48 @@ class _AddFileScreenState extends State<AddFileScreen> {
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  FadeInUp(
-                      duration: const Duration(milliseconds: 1900),
-                      child: InkWell(
-                        onTap: () {
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity, // Max width for the button
+                      child: ElevatedButton(
+                        onPressed: () {
                           if (formKey.currentState!.validate()) {
                             if (selectedFile != null) {
                               addFile(selectedFile!);
                             } else {
-                              Fluttertoast.showToast(
-                                  msg: "Please select a file");
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Please select a file."),
+                                  backgroundColor: Colors.red,
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
                             }
                           }
                         },
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              gradient: LinearGradient(colors: [
-                                primary2Color,
-                                primary1Color,
-                              ])),
-                          child: const Center(
-                            child: Text(
-                              "Save",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primary1Color,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                      )),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                ],
+                        child: const Text(
+                          "Save",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
-            )
-          ],
+            ],
+          ),
         ),
       ),
     );

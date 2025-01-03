@@ -1,38 +1,30 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: use_build_context_synchronously
 
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
-import 'package:password_manager/controllers/navigation_controller.dart';
-import 'package:password_manager/fragments/file1_fragment_screen.dart';
 import 'package:password_manager/model/file1.dart';
 import 'package:password_manager/model/shared.dart';
 import 'package:password_manager/screens/add_file_screen.dart';
-import 'package:password_manager/user_preferences/current_user.dart';
-import 'package:http/http.dart' as http;
 import 'package:password_manager/user_preferences/userPreferences.dart';
+import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 
-class FileFragmentScreen extends StatefulWidget {
-  const FileFragmentScreen({super.key});
+class File1FragmentScreen extends StatefulWidget {
+  const File1FragmentScreen({super.key});
 
   @override
-  State<FileFragmentScreen> createState() => _FileFragmentScreenState();
+  // ignore: library_private_types_in_public_api
+  _File1FragmentScreenState createState() => _File1FragmentScreenState();
 }
 
-class _FileFragmentScreenState extends State<FileFragmentScreen> {
-  final NavigationController navController = Get.find();
-  final currentOnlineUser = Get.put(CurrentUser());
-  List<RxBool> isObsecureV2 = [];
-  final List<String> items = ['Share', 'Delete'];
-  String? selectedValue;
+class _File1FragmentScreenState extends State<File1FragmentScreen> {
+  List<File1> files = [];
+  bool isLoading = true;
   var formKey = GlobalKey<FormState>();
   var formKey1 = GlobalKey<FormState>();
   TextEditingController sharedEmailController = TextEditingController();
@@ -44,92 +36,68 @@ class _FileFragmentScreenState extends State<FileFragmentScreen> {
   TextEditingController sharedAccessPasswordController =
       TextEditingController();
 
-  final List<IconData> icons = [Icons.share, Icons.delete];
-  final List<Color> colors = [Colors.green, Colors.red];
-
-  deleteFile(int id) async {
-    try {
-      var resultResponse = await Get.dialog(AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Delete File",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        content: const Text("Are you sure\nYou want to delete file?"),
-        actions: [
-          TextButton(
-              onPressed: () {
-                Get.back();
-              },
-              child: const Text(
-                "No",
-                style: TextStyle(color: Colors.blue),
-              )),
-          TextButton(
-              onPressed: () {
-                Get.back(result: "deleted");
-              },
-              child: const Text(
-                "Yes",
-                style: TextStyle(color: Colors.red),
-              ))
-        ],
-      ));
-
-      if (resultResponse == "deleted") {
-        String? token = await RememberUserPrefs.readToken();
-
-        var res = await http
-            .delete(Uri.parse("${API.fileInfoIntelliVault}$id/"), headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Token $token'
-        });
-
-        if (res.statusCode == 204) {
-          Fluttertoast.showToast(msg: "Deleted file");
-          setState(() {});
-        }
-      }
-    } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
-    }
+  @override
+  void initState() {
+    super.initState();
+    RememberUserPrefs().checkTokenValidity();
+    fetchFiles();
   }
 
-  Future<List<File1>> getFile() async {
-    List<File1> listOfFile = [];
+  void fetchFiles() async {
     try {
       String? token = await RememberUserPrefs.readToken();
 
       var res = await http.get(Uri.parse(API.fileInfoIntelliVault), headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Token $token'
+        'Authorization': 'Token $token',
       });
 
       if (res.statusCode == 200) {
         var responseBodyOfGetPassword = jsonDecode(res.body);
 
-        for (var eachFile in (responseBodyOfGetPassword as List)) {
-          listOfFile.add(File1.fromJson(eachFile));
-        }
+        setState(() {
+          files = (responseBodyOfGetPassword as List)
+              .map((eachFile) => File1.fromJson(eachFile))
+              .toList();
+          isLoading = false;
+        });
       } else {
-        Fluttertoast.showToast(msg: "Error occured executing query");
+        setState(() {
+          isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Error occurred executing query"),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
     } catch (errorMsg) {
-      Fluttertoast.showToast(msg: "Error occured executing query");
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Error occurred executing query"),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
-
-    return listOfFile;
   }
 
   downloadFile(int id, String fileName) async {
     try {
       String? token = await RememberUserPrefs.readToken();
 
-      var res = await http.get(Uri.parse("${API.downloadFileIntelliVault}$id/"),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Token $token'
-          });
+      var res = await http.get(
+        Uri.parse("${API.downloadFileIntelliVault}$id/"),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Token $token',
+        },
+      );
 
       if (res.statusCode == 200) {
         if (await Permission.storage.request().isGranted) {
@@ -144,15 +112,198 @@ class _FileFragmentScreenState extends State<FileFragmentScreen> {
           final file = File(filePath);
 
           await file.writeAsBytes(res.bodyBytes);
-          Fluttertoast.showToast(msg: "File Downloaded");
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("File downloaded successfully to $filePath"),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
         } else {
-          Fluttertoast.showToast(msg: "Storage permission not granted.");
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Storage permission not granted."),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
         }
       } else {
-        Fluttertoast.showToast(msg: "Permission not granted");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Failed to download file."),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
     } catch (errorMsg) {
-      Fluttertoast.showToast(msg: "Error occured executing query");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error occurred: $errorMsg"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  accessSharedFile() async {
+    try {
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16), // Rounded corners
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.file_open, color: Colors.blueAccent),
+              SizedBox(width: 8),
+              Text(
+                "Download Shared File",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Enter the shared code and access password to download the file.",
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: sharedLinkController,
+                  validator: (value) {
+                    if (value == "") {
+                      return "Please enter the shared code.";
+                    } else {
+                      return null;
+                    }
+                  },
+                  decoration: InputDecoration(
+                    labelText: "Shared Code",
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: sharedAccessPasswordController,
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == "") {
+                      return "Please enter the access password.";
+                    } else {
+                      return null;
+                    }
+                  },
+                  decoration: InputDecoration(
+                    labelText: "Access Password",
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                sharedLinkController.clear();
+                sharedAccessPasswordController.clear();
+                Navigator.pop(context);
+              },
+              child: const Text(
+                "Cancel",
+                style:
+                    TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  await getSharedFile(
+                    sharedLinkController.text.trim(),
+                    sharedAccessPasswordController.text.trim(),
+                  );
+                  sharedLinkController.clear();
+                  sharedAccessPasswordController.clear();
+                  Navigator.pop(context);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text("Download"),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${e.toString()}"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  getSharedFile(String link, String password) async {
+    try {
+      String? token = await RememberUserPrefs.readToken();
+
+      var res = await http.post(
+        Uri.parse("${API.sharedPasswordIntelliVault}$link/"),
+        headers: {'Authorization': 'Token $token'},
+        body: {"password": password},
+      );
+
+      if (res.statusCode == 200) {
+        var responseBodyOfGetSharedFile = jsonDecode(res.body);
+        SharedModelFile sharedModel =
+            SharedModelFile.fromJson(responseBodyOfGetSharedFile);
+        await downloadSharedFile(
+          sharedModel.item.file_download_link,
+          sharedModel.item.file_name,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Error accessing shared file."),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (errorMsg) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${errorMsg.toString()}"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
@@ -163,18 +314,20 @@ class _FileFragmentScreenState extends State<FileFragmentScreen> {
     Match? match = pattern.firstMatch(link);
 
     if (match != null) {
-      fileId = match.group(1)!; // Group 1 is the id
-      accessCode = match.group(2)!; // Group 2 is the access code
+      fileId = match.group(1)!;
+      accessCode = match.group(2)!;
     }
+
     try {
       String? token = await RememberUserPrefs.readToken();
 
       var res = await http.get(
-          Uri.parse("${API.downloadFileIntelliVault}$fileId/$accessCode/"),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Token $token'
-          });
+        Uri.parse("${API.downloadFileIntelliVault}$fileId/$accessCode/"),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Token $token',
+        },
+      );
 
       if (res.statusCode == 200) {
         if (await Permission.storage.request().isGranted) {
@@ -189,484 +342,342 @@ class _FileFragmentScreenState extends State<FileFragmentScreen> {
           final file = File(filePath);
 
           await file.writeAsBytes(res.bodyBytes);
-          Fluttertoast.showToast(msg: "File Downloaded");
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("File downloaded successfully to $filePath"),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
         } else {
-          Fluttertoast.showToast(msg: "Storage permission not granted.");
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Storage permission not granted."),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
         }
       } else {
-        Fluttertoast.showToast(msg: "Permission not granted");
-      }
-    } catch (errorMsg) {
-      Fluttertoast.showToast(msg: "Error occured executing query");
-    }
-  }
-
-  // getSharedFile(String fileName, int id, String link) async {
-  //   String filePath;
-  //   try {
-  //     String? token = await RememberUserPrefs.readToken();
-
-  //     var res = await http.get(
-  //       Uri.parse("${API.downloadFileIntelliVault}$id/$link/"),
-  //       headers: {'Authorization': 'Token $token'},
-  //     );
-
-  //     if (res.statusCode == 200) {
-  //       if (await Permission.storage.request().isGranted) {
-  //         Directory downloadsDirectory =
-  //             Directory('/storage/emulated/0/Download');
-
-  //         if (!downloadsDirectory.existsSync()) {
-  //           downloadsDirectory.createSync(recursive: true);
-  //         }
-  //         String? mimeType = lookupMimeType('', headerBytes: res.bodyBytes);
-  //         if (mimeType == 'application/pdf') {
-  //           filePath = '${downloadsDirectory.path}/$fileName.pdf';
-  //         } else if (mimeType?.startsWith('application/msword') == true) {
-  //           filePath = '${downloadsDirectory.path}/$fileName.doc';
-  //         } else if (mimeType?.startsWith('image/png') == true) {
-  //           filePath = '${downloadsDirectory.path}/$fileName.png';
-  //         } else if (mimeType?.startsWith('image/jpeg') == true) {
-  //           filePath = '${downloadsDirectory.path}/$fileName.jpg';
-  //         } else {
-  //           filePath = '${downloadsDirectory.path}/$fileName';
-  //         }
-
-  //         final file = File(filePath);
-
-  //         await file.writeAsBytes(res.bodyBytes);
-  //         Fluttertoast.showToast(msg: "File downloaded");
-  //       }
-  //     } else {
-  //       Fluttertoast.showToast(msg: "Error downloading shared file");
-  //     }
-  //   } catch (errorMsg) {
-  //     print(errorMsg);
-  //   }
-  // }
-
-  getSharedFile(String link, String password) async {
-    SharedModelFile sharedModel;
-    try {
-      String? token = await RememberUserPrefs.readToken();
-
-      var res = await http.post(
-          Uri.parse("${API.sharedPasswordIntelliVault}$link/"),
-          headers: {'Authorization': 'Token $token'},
-          body: {"password": password});
-
-      if (res.statusCode == 200) {
-        var responseBodyOfGetSharedFile = jsonDecode(res.body);
-        sharedModel = SharedModelFile.fromJson(responseBodyOfGetSharedFile);
-        downloadSharedFile(
-            sharedModel.item.file_download_link, sharedModel.item.file_name);
-      } else {
-        Fluttertoast.showToast(msg: "Error accessing shared file");
-      }
-    } catch (errorMsg) {
-      print(errorMsg);
-    }
-  }
-
-  accessSharedFile() async {
-    try {
-      await Get.dialog(AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Download Shared File",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: sharedLinkController,
-                validator: (value) {
-                  if (value == "") {
-                    return "Please write shared code";
-                  } else {
-                    return null;
-                  }
-                },
-                decoration: const InputDecoration(hintText: "Shared Code"),
-              ),
-              TextFormField(
-                controller: sharedAccessPasswordController,
-                validator: (value) {
-                  if (value == "") {
-                    return "Please write access password";
-                  } else {
-                    return null;
-                  }
-                },
-                decoration: const InputDecoration(hintText: "Access Password"),
-              ),
-            ],
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Failed to download the file."),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
           ),
+        );
+      }
+    } catch (errorMsg) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${errorMsg.toString()}"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
         ),
-        actions: [
-          TextButton(
-              onPressed: () {
-                sharedLinkController.clear();
-                sharedAccessPasswordController.clear();
-                Get.back();
-              },
-              child: const Text(
-                "Cancel",
-                style: TextStyle(color: Colors.blue),
-              )),
-          TextButton(
-              onPressed: () async {
-                if (formKey.currentState!.validate()) {
-                  Future.delayed(const Duration(milliseconds: 1000), () {
-                    getSharedFile(sharedLinkController.text.toString().trim(),
-                        sharedAccessPasswordController.text.toString().trim());
-                    sharedLinkController.clear();
-                    sharedAccessPasswordController.clear();
-
-                    Get.back();
-                  });
-                }
-              },
-              child: const Text(
-                "Download",
-                style: TextStyle(color: Colors.green),
-              ))
-        ],
-      ));
-    } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
+      );
     }
   }
 
   shareFile(int id) async {
     String? sharedLink;
     try {
-      await Get.dialog(StatefulBuilder(builder: ((context, setState) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text(
-            "Share File",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          content: Form(
-            key: formKey1,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: sharingPasswordController,
-                  validator: (value) {
-                    if (value == "") {
-                      return "Please write access password";
-                    } else {
-                      return null;
-                    }
-                  },
-                  decoration:
-                      const InputDecoration(hintText: "Access Password"),
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15), // Rounded corners
                 ),
-                if (sharedLink != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16.0),
-                    child: SelectableText(
-                      "Access Code : $sharedLink",
-                      style: const TextStyle(color: Colors.green),
-                      textAlign: TextAlign.center,
+                title: const Row(
+                  children: [
+                    Icon(Icons.share, color: Colors.blueAccent),
+                    SizedBox(width: 8),
+                    Text(
+                      "Share File",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                content: Form(
+                  key: formKey1,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Enter an access password to share securely.",
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        obscureText: true,
+                        controller: sharingPasswordController,
+                        validator: (value) {
+                          if (value == "") {
+                            return "Please enter an access password.";
+                          } else {
+                            return null;
+                          }
+                        },
+                        decoration: InputDecoration(
+                          labelText: "Access Password",
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      if (sharedLink != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: SelectableText(
+                            "Access Code: $sharedLink",
+                            style: const TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        sharedLink = null;
+                        sharingPasswordController.clear();
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: const Text(
+                      "Cancel",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-              ],
-            ),
-          ),
-          actions: [
-            Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                      onPressed: () {
-                        setState(() {
-                          sharedLink = null;
-                        });
-                        Get.back();
-                      },
-                      child: const Text(
-                        "Cancel",
-                        style: TextStyle(color: Colors.blue),
-                      )),
-                  const SizedBox(width: 16),
-                  if (sharedLink != null)
-                    TextButton(
-                        onPressed: () {
-                          null;
-                        },
-                        child: const Text(
-                          "Share",
-                          style: TextStyle(color: Colors.grey),
-                        )),
-                  if (sharedLink == null)
-                    TextButton(
-                        onPressed: () async {
-                          Future.delayed(const Duration(milliseconds: 1000),
-                              () async {
-                            String? result = await sharingFile(
+                  ElevatedButton(
+                    onPressed: sharedLink == null
+                        ? () async {
+                            if (formKey1.currentState!.validate()) {
+                              String? result = await sharingFile(
                                 id,
                                 sharingPasswordController.text
                                     .toString()
-                                    .trim());
-                            setState(() {
-                              sharedLink = result;
-                            });
-                          });
-                        },
-                        child: const Text(
-                          "Share",
-                          style: TextStyle(color: Colors.green),
-                        ))
+                                    .trim(),
+                              );
+                              setState(() {
+                                sharedLink = result;
+                              });
+                            }
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          sharedLink == null ? Colors.green : Colors.grey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      "Share",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ],
-              ),
-            ),
-          ],
-        );
-      })));
+              );
+            },
+          );
+        },
+      );
     } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${e.toString()}"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
   Future<String?> sharingFile(int id, String password) async {
-    String link;
     try {
       String? token = await RememberUserPrefs.readToken();
 
-      var res = await http.post(Uri.parse("${API.shareFileIntelliVault}$id/"),
-          headers: {'Authorization': 'Token $token'},
-          body: {"password": password});
+      var res = await http.post(
+        Uri.parse("${API.shareFileIntelliVault}$id/"),
+        headers: {'Authorization': 'Token $token'},
+        body: {"password": password},
+      );
 
       if (res.statusCode == 201) {
         var responseBodyOfGetSharedPassword = jsonDecode(res.body);
-        link = responseBodyOfGetSharedPassword["share_link"];
+        String link = responseBodyOfGetSharedPassword["share_link"];
         Uri uri = Uri.parse(link);
         String code =
             uri.pathSegments.where((segment) => segment.isNotEmpty).last;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("File shared successfully!"),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+
         return code;
       } else {
-        Fluttertoast.showToast(msg: "Error sharing file");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Error sharing file."),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
         return null;
       }
     } catch (errorMsg) {
-      print(errorMsg);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${errorMsg.toString()}"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return null;
     }
-    return null;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    RememberUserPrefs().checkTokenValidity();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ElevatedButton(
-                onPressed: () {
-                  navController.navigateToFragment(7);
-                },
-                child: Text("Press Here")),
-            const SizedBox(
-              height: 16,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                "Files",
-                style: TextStyle(
-                    color: primary1Color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20),
-              ),
-            ),
-            FutureBuilder(
-                future: getFile(),
-                builder: (context, AsyncSnapshot<List<File1>> dataSnapShot) {
-                  if (dataSnapShot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-
-                  if (dataSnapShot.data == null) {
-                    return const Center(
-                      child: Text(
-                        "No file found",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    );
-                  }
-
-                  if (dataSnapShot.data!.isNotEmpty) {
-                    return ListView.builder(
-                      itemCount: dataSnapShot.data!.length,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      scrollDirection: Axis.vertical,
-                      itemBuilder: (context, index) {
-                        File1 eachFile = dataSnapShot.data![index];
-
-                        return Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          margin: EdgeInsets.fromLTRB(0, index == 0 ? 16 : 8, 0,
-                              index == dataSnapShot.data!.length - 1 ? 16 : 8),
-                          decoration: BoxDecoration(
-                            border: Border.symmetric(
-                                horizontal: BorderSide(color: primary1Color)),
-                            color: Colors.white,
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                  child: Padding(
-                                padding: const EdgeInsets.only(left: 15),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Padding(
-                                            padding: const EdgeInsets.only(
-                                                right: 12),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  eachFile.file_name,
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                      fontSize: 14,
-                                                      color: Colors.black,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ],
-                                            )),
-                                        const Spacer(),
-                                        const SizedBox(
-                                          width: 10,
-                                        ),
-                                        IconButton(
-                                            onPressed: () {
-                                              downloadFile(eachFile.id,
-                                                  eachFile.file_name);
-                                            },
-                                            icon: const Icon(Icons.download)),
-                                        DropdownButtonHideUnderline(
-                                          child: DropdownButton2<String>(
-                                            customButton: const Icon(
-                                              Icons.menu,
-                                              size: 20,
-                                            ),
-                                            items: items
-                                                .map((String item) =>
-                                                    DropdownMenuItem(
-                                                      value: item,
-                                                      child: Icon(
-                                                        icons[items
-                                                            .indexOf(item)],
-                                                        size: 20,
-                                                        color: colors[items
-                                                            .indexOf(item)],
-                                                      ),
-                                                    ))
-                                                .toList(),
-                                            value: selectedValue,
-                                            onChanged: (String? value) {
-                                              if (value == "Share") {
-                                                shareFile(eachFile.id);
-                                              } else {
-                                                deleteFile(eachFile.id);
-                                              }
-                                            },
-                                            buttonStyleData:
-                                                const ButtonStyleData(
-                                              height: 40,
-                                              width: 45,
-                                            ),
-                                            dropdownStyleData:
-                                                DropdownStyleData(
-                                              maxHeight: 200,
-                                              width: 50,
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                                color: Colors.white,
-                                              ),
-                                              offset: const Offset(-10, 0),
-                                            ),
-                                            menuItemStyleData:
-                                                const MenuItemStyleData(
-                                              height: 40,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(
-                                          width: 20,
-                                        )
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              )),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  } else {
-                    return const Center(
-                      child: Text(
-                        "Empty, No Data",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    );
-                  }
-                }),
-          ],
-        ),
-      ),
-      floatingActionButton: SpeedDial(
-        animatedIcon: AnimatedIcons.menu_close,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: primary1Color,
-        overlayColor: Colors.black,
-        overlayOpacity: 0.5,
-        children: [
-          SpeedDialChild(
-            child: Icon(
-              Icons.add,
-              color: primary1Color,
-            ),
-            onTap: () => Get.to(const AddFileScreen()),
-          ),
-          SpeedDialChild(
-            child: Icon(
-              Icons.share,
-              color: primary1Color,
-            ),
-            onTap: () {
+        title: const Text('Files'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share), iconSize: 19,
+            onPressed: () {
               accessSharedFile();
+            }, // Open shared files dialog
+          ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              Get.to(const Add2FileScreen());
             },
           ),
         ],
       ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : files.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.folder_open, // Represents files or a folder
+                        size: 80,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        "Oh no, no files found!",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Upload your first file to get started!",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () {
+                          Get.to(const Add2FileScreen());
+                        },
+                        child: const Text(
+                          "Upload File",
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: files.length,
+                  itemBuilder: (context, index) {
+                    String file = files[index].file_name;
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      elevation: 3,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        leading: const CircleAvatar(
+                          backgroundColor: Colors.grey,
+                          child: Icon(
+                            Icons.description,
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: Text(
+                          file,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.download),
+                              onPressed: () {
+                                downloadFile(
+                                    files[index].id, files[index].file_name);
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.share,
+                              ),
+                              onPressed: () {
+                                shareFile(files[index].id);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
     );
   }
 }

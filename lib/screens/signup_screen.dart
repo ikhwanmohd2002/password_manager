@@ -1,6 +1,6 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
-import 'package:animate_do/animate_do.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
@@ -43,7 +43,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       if (res.statusCode == 204) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text("You have successfully registered"),
             backgroundColor: Colors.green,
           ),
@@ -59,7 +59,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text("Error registering account"),
             backgroundColor: Colors.red,
           ),
@@ -91,7 +91,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   end: Alignment.bottomCenter,
                 ),
               ),
-              child: Center(
+              child: const Center(
                 child: Text(
                   "Set Up Your Secure Vault",
                   style: TextStyle(
@@ -130,7 +130,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 value == "" ? "Please enter username" : null,
                             decoration: InputDecoration(
                               labelText: "Username",
-                              prefixIcon: Icon(Icons.person),
+                              prefixIcon: const Icon(Icons.person),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -149,7 +149,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             },
                             decoration: InputDecoration(
                               labelText: "Email",
-                              prefixIcon: Icon(Icons.email),
+                              prefixIcon: const Icon(Icons.email),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -175,7 +175,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             },
                             decoration: InputDecoration(
                               labelText: "Password",
-                              prefixIcon: Icon(Icons.lock),
+                              prefixIcon: const Icon(Icons.lock),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -193,7 +193,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             },
                             decoration: InputDecoration(
                               labelText: "Confirm Password",
-                              prefixIcon: Icon(Icons.lock),
+                              prefixIcon: const Icon(Icons.lock),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -206,7 +206,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           const SizedBox(height: 10),
                           Text(
                             CustomPassStrength.instructions,
-                            style: TextStyle(fontSize: 15, color: Colors.grey),
+                            style: const TextStyle(
+                                fontSize: 15, color: Colors.grey),
                           )
                         ],
                       ),

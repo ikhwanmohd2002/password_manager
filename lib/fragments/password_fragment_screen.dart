@@ -4,8 +4,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:password_manager/api_connection/api_connection.dart';
@@ -34,7 +32,7 @@ class _PasswordFragmentScreenState extends State<PasswordFragmentScreen> {
   bool useSpecialChars = false;
 
   Future<String?> generatePassword(int length, bool use_uppercase,
-      bool use_numbers, bool use_special_chars) async {
+      bool use_numbers, bool use_special_chars, BuildContext context) async {
     try {
       String? token = await RememberUserPrefs.readToken();
 
@@ -56,14 +54,22 @@ class _PasswordFragmentScreenState extends State<PasswordFragmentScreen> {
 
         return generatedPassword;
       } else {
-        Fluttertoast.showToast(msg: "Error sharing password");
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error sharing password")),
+        );
         return null;
       }
-    } catch (errorMsg) {}
+    } catch (errorMsg) {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("An unexpected error occurred")),
+      );
+    }
     return null;
   }
 
-  predictPhishing(String link) async {
+  predictPhishing(String link, BuildContext context) async {
     try {
       String? token = await RememberUserPrefs.readToken();
 
@@ -80,283 +86,264 @@ class _PasswordFragmentScreenState extends State<PasswordFragmentScreen> {
         var responseBodyOfPredictLogin = jsonDecode(res.body);
         String prediction = responseBodyOfPredictLogin["prediction"];
         if (prediction == "valid") {
-          Fluttertoast.showToast(msg: "Link Valid");
+          // ignore: use_build_context_synchronously
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Link Valid"),
+              backgroundColor: Colors.green,
+            ),
+          );
         } else {
-          Fluttertoast.showToast(msg: "Phishing Detected");
+          // ignore: use_build_context_synchronously
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Phishing Detected"),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       } else {
-        Fluttertoast.showToast(msg: "Error predicting phishing");
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error predicting phishing")),
+        );
         return null;
       }
-    } catch (errorMsg) {}
+    } catch (errorMsg) {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("An unexpected error occurred")),
+      );
+    }
     return null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(
-                height: 16,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text("Miscellaneous"),
+        backgroundColor: primary1Color,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Generate Password Section
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  "Generate Password",
-                  style: TextStyle(
-                      color: primary1Color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20),
-                ),
-              ),
-              if (generatedPassword != null)
-                const SizedBox(
-                  height: 10,
-                ),
-              if (generatedPassword != null)
-                SizedBox(
-                  width: double.infinity,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black, width: 1),
-                        borderRadius: BorderRadius.circular(10),
-                        color: Colors.white),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            generatedPassword!,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                            style: const TextStyle(
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () async {
-                            await Clipboard.setData(ClipboardData(
-                                text: generatedPassword.toString()));
-                            Fluttertoast.showToast(msg: "Copied to clipboard");
-                          },
-                          child: const Icon(
-                            Icons.copy,
-                            size: 20,
-                            color: Colors.black,
-                          ),
-                        )
-                      ],
+              elevation: 4,
+              margin: const EdgeInsets.only(bottom: 16.0),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Generate Password",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: primary1Color,
+                      ),
                     ),
-                  ),
-                ),
-              const SizedBox(
-                height: 8,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Form(
-                    key: formKey,
-                    child: Column(
-                      children: [
-                        Row(
+                    const SizedBox(height: 8),
+                    if (generatedPassword != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Flexible(
-                              child: Container(
-                                padding: const EdgeInsets.only(left: 8),
-                                child: TextFormField(
-                                  style: const TextStyle(fontSize: 12),
-                                  controller: lengthController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Length',
-                                    border: OutlineInputBorder(),
+                            Expanded(
+                              child: Text(
+                                generatedPassword!,
+                                style: const TextStyle(fontSize: 14),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.copy, color: Colors.black),
+                              onPressed: () async {
+                                await Clipboard.setData(
+                                    ClipboardData(text: generatedPassword!));
+                                Fluttertoast.showToast(
+                                    msg: "Copied to clipboard");
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    Form(
+                      key: formKey,
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: lengthController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: "Length",
+                              prefixIcon: const Icon(Icons.numbers),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Enter length";
+                              }
+                              final length = int.tryParse(value);
+                              if (length == null || length <= 0) {
+                                return "Enter positive number";
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CheckboxListTile(
+                                  title: const Text(
+                                    "Uppercase Letters",
+                                    style: TextStyle(fontSize: 14),
                                   ),
-                                  keyboardType: TextInputType.number,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Enter length';
-                                    }
-                                    final length = int.tryParse(value);
-                                    if (length == null || length <= 0) {
-                                      return 'Enter postive number';
-                                    }
-                                    return null;
+                                  value: useUppercase,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      useUppercase = value!;
+                                    });
                                   },
                                 ),
                               ),
-                            ),
-                            Flexible(
-                              child: CheckboxListTile(
-                                title: const Text(
-                                  'Uppercase Letters',
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                                value: useUppercase,
-                                onChanged: (value) {
-                                  setState(() {
-                                    useUppercase = value!;
-                                  });
-                                },
-                              ),
-                            )
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Flexible(
-                              child: CheckboxListTile(
-                                title: const Text('Numbers',
-                                    style: TextStyle(fontSize: 12)),
-                                value: useNumbers,
-                                onChanged: (value) {
-                                  setState(() {
-                                    useNumbers = value!;
-                                  });
-                                },
-                              ),
-                            ),
-                            Flexible(
-                              child: CheckboxListTile(
-                                title: const Text('Special Characters',
-                                    style: TextStyle(fontSize: 12)),
-                                value: useSpecialChars,
-                                onChanged: (value) {
-                                  setState(() {
-                                    useSpecialChars = value!;
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                  foregroundColor: Colors.white),
-                              onPressed: () {
-                                if (formKey.currentState!.validate()) {
-                                  Future.delayed(
-                                      const Duration(milliseconds: 1000),
-                                      () async {
-                                    String? result = await generatePassword(
-                                        int.parse(lengthController.text
-                                            .toString()
-                                            .trim()),
-                                        useUppercase,
-                                        useNumbers,
-                                        useSpecialChars);
+                              Expanded(
+                                child: CheckboxListTile(
+                                  title: const Text("Numbers"),
+                                  value: useNumbers,
+                                  onChanged: (value) {
                                     setState(() {
-                                      generatedPassword = result;
+                                      useNumbers = value!;
                                     });
-                                  });
-                                }
-                              },
-                              child: const Text('Generate Password'),
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          CheckboxListTile(
+                            title: const Text("Special Characters"),
+                            value: useSpecialChars,
+                            onChanged: (value) {
+                              setState(() {
+                                useSpecialChars = value!;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.lock_open),
+                            label: const Text("Generate Password"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 48),
                             ),
+                            onPressed: () async {
+                              if (formKey.currentState!.validate()) {
+                                String? result = await generatePassword(
+                                    int.parse(lengthController.text.trim()),
+                                    useUppercase,
+                                    useNumbers,
+                                    useSpecialChars,
+                                    context);
+                                setState(() {
+                                  generatedPassword = result;
+                                });
+                              }
+                            },
                           ),
-                        )
-                      ],
-                    )),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  "Phishing Detection",
-                  style: TextStyle(
-                      color: primary1Color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20),
-                ),
-              ),
-              Form(
-                key: formKey1,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(8, 8, 16, 8),
-                      child: Container(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: TextFormField(
-                          style: const TextStyle(fontSize: 12),
-                          controller: linkController,
-                          decoration: const InputDecoration(
-                            labelText: 'URL Link',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Enter URL Link';
-                            } else {
-                              return null;
-                            }
-                          },
-                        ),
+                        ],
                       ),
                     ),
-                    SizedBox(
-                      width: double.infinity,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white),
-                          onPressed: () {
-                            if (formKey1.currentState!.validate()) {
-                              Future.delayed(const Duration(milliseconds: 1000),
-                                  () async {
-                                predictPhishing(
-                                    linkController.text.toString().trim());
-                              });
-                            }
-                          },
-                          child: const Text('Detect Phishing'),
-                        ),
-                      ),
-                    )
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-        floatingActionButton: SpeedDial(
-          animatedIcon: AnimatedIcons.menu_close,
-          backgroundColor: primary1Color,
-          overlayColor: Colors.black,
-          overlayOpacity: 0.5,
-          children: [
-            SpeedDialChild(
-              child: Icon(
-                Icons.add,
-                color: primary1Color,
-              ),
-              onTap: () {
-                //Get.to(const AddPassword1Screen());
-              },
             ),
-            SpeedDialChild(
-              child: Icon(
-                Icons.share,
-                color: primary1Color,
+
+            // Phishing Detection Section
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
               ),
-              onTap: () {
-                //accessSharedPassword();
-              },
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Phishing Detection",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: primary1Color,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Form(
+                      key: formKey1,
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: linkController,
+                            decoration: InputDecoration(
+                              labelText: "URL Link",
+                              prefixIcon: const Icon(Icons.link),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Enter URL Link";
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.shield),
+                            label: const Text("Detect Phishing"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                            onPressed: () async {
+                              if (formKey1.currentState!.validate()) {
+                                await predictPhishing(
+                                    linkController.text.trim(), context);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
-        ));
+        ),
+      ),
+    );
   }
 }

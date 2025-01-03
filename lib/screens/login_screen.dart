@@ -1,8 +1,8 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:convert';
 
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -80,20 +80,20 @@ class _LoginScreenState extends State<LoginScreen> {
         if (checkLogin != null) {
           if (checkLogin == false) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+              const SnackBar(
                 content: Text("Login Anomalous"),
                 backgroundColor: Colors.red,
               ),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+              const SnackBar(
                 content: Text("Successfully logged in"),
                 backgroundColor: Colors.green,
               ),
             );
 
-            Future.delayed(Duration(milliseconds: 2000), () {
+            Future.delayed(const Duration(milliseconds: 2000), () {
               Get.offAll(DashboardOfFragments(), arguments: {"logged": 0});
             });
           }
@@ -103,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
           attempt++;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text("Failed to login. Please Try Again"),
             backgroundColor: Colors.red,
           ),
@@ -111,12 +111,11 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text("Failed to login. Please Try Again!!"),
           backgroundColor: Colors.red,
         ),
       );
-      print(e.toString());
     }
   }
 
@@ -128,7 +127,9 @@ class _LoginScreenState extends State<LoginScreen> {
         currentLat = position.latitude;
         currentLon = position.longitude;
       });
-    } catch (e) {}
+    } catch (e) {
+      throw Exception('Failed to load items');
+    }
   }
 
   Future<bool?> predictLoginAttempt(int time, int attempt, int variance) async {
@@ -156,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text("Error predicting login"),
             backgroundColor: Colors.red,
           ),
@@ -190,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   end: Alignment.bottomCenter,
                 ),
               ),
-              child: Center(
+              child: const Center(
                 child: Text(
                   "Unlock Your Secure Vault",
                   style: TextStyle(
@@ -229,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 value == "" ? "Please enter username" : null,
                             decoration: InputDecoration(
                               labelText: "Username",
-                              prefixIcon: Icon(Icons.person),
+                              prefixIcon: const Icon(Icons.person),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -242,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 value == "" ? "Please enter email" : null,
                             decoration: InputDecoration(
                               labelText: "Email",
-                              prefixIcon: Icon(Icons.email),
+                              prefixIcon: const Icon(Icons.email),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -256,7 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 value == "" ? "Please enter password" : null,
                             decoration: InputDecoration(
                               labelText: "Password",
-                              prefixIcon: Icon(Icons.lock),
+                              prefixIcon: const Icon(Icons.lock),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),

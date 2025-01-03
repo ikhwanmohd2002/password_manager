@@ -1,348 +1,430 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:password_manager/api_connection/api_connection.dart';
 import 'dart:convert';
 
-import 'package:dropdown_button2/dropdown_button2.dart';
-import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:get/get.dart';
-import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
-import 'package:http/http.dart' as http;
-import 'package:password_manager/controllers/navigation_controller.dart';
-import 'package:password_manager/model/vault.dart';
+import 'package:password_manager/model/vault_info.dart';
+import 'package:password_manager/model/vault_items.dart';
 import 'package:password_manager/screens/add_vault_screen.dart';
-import 'package:password_manager/screens/new_home_screen.dart';
-import 'package:password_manager/user_preferences/current_user.dart';
+import 'package:password_manager/screens/vault_info_screen.dart';
 import 'package:password_manager/user_preferences/userPreferences.dart';
 
-class VaultFragmentScreen extends StatefulWidget {
-  const VaultFragmentScreen({super.key});
-
+class Vault1FragmentScreen extends StatefulWidget {
+  const Vault1FragmentScreen({super.key});
   @override
-  State<VaultFragmentScreen> createState() => _VaultFragmentScreenState();
+  State<Vault1FragmentScreen> createState() => _Vault1FragmentScreenState();
 }
 
-class _VaultFragmentScreenState extends State<VaultFragmentScreen> {
-  final NavigationController navController = Get.find();
-  TextEditingController searchController = TextEditingController();
-  final List<String> items = ['Update', 'Share', 'Delete'];
-  final List<IconData> icons = [Icons.edit, Icons.share, Icons.delete];
-  final List<Color> colors = [Colors.blue, Colors.green, Colors.red];
-  String? selectedValue;
+class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
+  List<VaultInfo> vaults = [];
+  List<int> vaultsItemsTotal = [];
+  bool isLoading = true;
 
-  final currentOnlineUser = Get.put(CurrentUser());
+  @override
+  void initState() {
+    super.initState();
+    fetchVaults();
+  }
 
-  Future<List<Vault>> getVault() async {
-    List<Vault> listOfVault = [];
+  Future<void> fetchVaults() async {
+    List<VaultInfo> listOfVault = [];
+    List<int> listOfVaultsItemsTotal = [];
     try {
       String? token = await RememberUserPrefs.readToken();
-      var res = await http.get(Uri.parse(API.vaultInfoIntelliVault), headers: {
+      final response = await http.get(Uri.parse(API.vaultInfoIntelliVault),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Token $token'
+          });
+      if (response.statusCode == 200) {
+        var responseBodyOfGetVault = jsonDecode(response.body);
+        for (var eachVault in (responseBodyOfGetVault as List)) {
+          listOfVault.add(VaultInfo.fromJson(eachVault));
+          if (VaultInfo.fromJson(eachVault).team == null) {
+            int totalItems = await fetchTotalItems(eachVault['id']);
+            listOfVaultsItemsTotal.add(totalItems);
+          }
+        }
+        setState(() {
+          vaults = listOfVault.where((vault) => vault.team == null).toList();
+          vaultsItemsTotal = listOfVaultsItemsTotal;
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load vaults');
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching vaults: $e')),
+      );
+    }
+  }
+
+  deleteVault(int id) async {
+    try {
+      var resultResponse = await Get.dialog(
+        AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.redAccent,
+                size: 28,
+              ),
+              SizedBox(width: 8),
+              Text(
+                "Delete Vault",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.redAccent,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Divider(color: Colors.grey.shade300),
+              const SizedBox(height: 16),
+              Text(
+                "Are you sure you want to delete this vault? This action cannot be undone.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Get.back(); // Dismiss the dialog
+              },
+              child: const Text(
+                "Cancel",
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              onPressed: () {
+                Get.back(result: "deleted"); // Return "deleted" to proceed
+              },
+              child: const Text(
+                "Delete",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (resultResponse == "deleted") {
+        String? token = await RememberUserPrefs.readToken();
+
+        var res = await http.delete(
+          Uri.parse("${API.vaultInfoIntelliVault}$id/"),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Token $token',
+          },
+        );
+
+        if (res.statusCode == 204) {
+          // Show success SnackBar
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Vault deleted successfully."),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+          setState(() {
+            fetchVaults();
+          });
+        } else {
+          // Show error SnackBar
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Failed to delete vault."),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Show error SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${e.toString()}"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<int> fetchTotalItems(int id) async {
+    try {
+      String? token = await RememberUserPrefs.readToken();
+
+      var res = await http
+          .get(Uri.parse("${API.vaultItemsIntelliVault}$id/items/"), headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Token $token'
       });
 
       if (res.statusCode == 200) {
-        var responseBodyOfGetVault = jsonDecode(res.body);
-        for (var eachVault in (responseBodyOfGetVault as List)) {
-          listOfVault.add(Vault.fromJson(eachVault));
-        }
-      } else {
-        Fluttertoast.showToast(msg: "Error occured executing query");
+        var responseBodyOfGetPassword = jsonDecode(res.body);
+        VaultItems vaultItems = VaultItems.fromJson(responseBodyOfGetPassword);
+        int totalItems =
+            vaultItems.loginItems.length + vaultItems.fileItems.length;
+
+        return totalItems;
       }
+      return 0;
     } catch (errorMsg) {
-      print(errorMsg);
+      return 0;
     }
-
-    return listOfVault;
-  }
-
-  deleteVault(int id) async {
-    try {
-      var resultResponse = await Get.dialog(AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Delete Password",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        content: const Text("Are you sure\nYou want to delete vault?"),
-        actions: [
-          TextButton(
-              onPressed: () {
-                Get.back();
-              },
-              child: const Text(
-                "No",
-                style: TextStyle(color: Colors.blue),
-              )),
-          TextButton(
-              onPressed: () {
-                Get.back(result: "deleted");
-              },
-              child: const Text(
-                "Yes",
-                style: TextStyle(color: Colors.red),
-              ))
-        ],
-      ));
-
-      if (resultResponse == "deleted") {
-        String? token = await RememberUserPrefs.readToken();
-
-        var res = await http
-            .delete(Uri.parse("${API.vaultInfoIntelliVault}$id/"), headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Token $token'
-        });
-
-        if (res.statusCode == 204) {
-          Fluttertoast.showToast(msg: "Deleted vault");
-          setState(() {});
-        }
-      }
-    } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
-      print(e);
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    RememberUserPrefs().checkTokenValidity();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ElevatedButton(
-                onPressed: () {
-                  navController.navigateToFragment(6);
-                },
-                child: Text("Press Here")),
-            const SizedBox(
-              height: 16,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                "Vaults",
-                style: TextStyle(
-                    color: primary1Color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20),
-              ),
-            ),
-            const SizedBox(
-              height: 16,
-            ),
-            FutureBuilder(
-                future: getVault(),
-                builder: (context, AsyncSnapshot<List<Vault>> dataSnapShot) {
-                  if (dataSnapShot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-
-                  if (dataSnapShot.data == null) {
-                    return const Center(
-                      child: Text(
-                        "No vault found",
-                        style: TextStyle(color: Colors.grey),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: primary1Color,
+        title: const Text('Vaults'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () async {
+              await Get.to(() => const Add2VaultScreen())?.then((result) {
+                if (result == 'refresh') {
+                  setState(() {
+                    fetchVaults();
+                  });
+                }
+              });
+            },
+          ),
+        ],
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : vaults.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.lock,
+                          size: 64, color: Colors.grey.shade400), // Vault icon
+                      const SizedBox(height: 16),
+                      Text(
+                        "Oh no, you don't have any vaults!",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
-                    );
-                  }
-
-                  if (dataSnapShot.data!.length > 0) {
-                    return ListView.builder(
-                      itemCount: dataSnapShot.data!.length,
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      scrollDirection: Axis.vertical,
-                      itemBuilder: (context, index) {
-                        Vault eachVault = dataSnapShot.data![index];
-
-                        return GestureDetector(
-                          onTap: () {
-                            Get.to(HomePage());
-                            print(eachVault.id);
-                          },
-                          child: Column(
-                            children: [
-                              Container(
-                                height: 90,
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 20),
-                                padding: const EdgeInsetsDirectional.symmetric(
-                                    vertical: 20, horizontal: 20),
-                                decoration: BoxDecoration(
-                                    boxShadow: const [
-                                      BoxShadow(
-                                          offset: Offset(0, 3),
-                                          blurRadius: 6,
-                                          color: Colors.grey)
-                                    ],
-                                    color: primary1Color,
-                                    borderRadius: BorderRadius.circular(20)),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                      const SizedBox(height: 8),
+                      Text(
+                        "Create a vault to securely store your files and passwords!",
+                        textAlign: TextAlign.center, // Center align text
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          Get.to(
+                              const Add2VaultScreen()); // Navigate to vault creation screen
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          "Create Vault",
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: vaults.length,
+                  itemBuilder: (context, index) {
+                    final vault = vaults[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 12.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      elevation: 4,
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.security, // Icon for the vault
+                          color: Colors.blueAccent,
+                          size: 32.0,
+                        ),
+                        title: Text(
+                          vault.name,
+                          style: const TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Creator: ${vault.owner.username}',
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${vaultsItemsTotal[index]} items',
+                              style: const TextStyle(
+                                fontSize: 12.0,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.more_vert,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20),
+                                    ),
+                                  ),
+                                  builder: (context) => Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: const BoxDecoration(
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(20),
+                                      ),
+                                      color: Colors.white,
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text(
-                                          eachVault.name,
-                                          style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 15),
+                                        Container(
+                                          width: 50,
+                                          height: 5,
+                                          margin:
+                                              const EdgeInsets.only(bottom: 16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[300],
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
                                         ),
-                                        Text(
-                                          currentOnlineUser.user.username,
-                                          style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 13),
+                                        ListTile(
+                                          leading: Icon(Icons.visibility,
+                                              color: Colors.grey[700]),
+                                          title: const Text("View",
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold)),
+                                          onTap: () {
+                                            Navigator.pop(context);
+                                            Get.to(VaultInfoScreen(
+                                              vaultName: vault.name,
+                                              id: vault.id,
+                                              teamID: vault.team,
+                                            ));
+                                          },
+                                        ),
+                                        const Divider(color: Colors.grey),
+                                        ListTile(
+                                          leading: Icon(Icons.edit,
+                                              color: Colors.grey[700]),
+                                          title: const Text("Edit",
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold)),
+                                          onTap: () async {
+                                            Navigator.pop(context);
+                                            await Get.to(
+                                                () => const Add2VaultScreen(),
+                                                arguments: {
+                                                  'id': vault.id,
+                                                  'name': vault.name,
+                                                  'team': vault.team
+                                                })?.then((result) {
+                                              if (result == 'refresh') {
+                                                setState(() {
+                                                  fetchVaults();
+                                                });
+                                              }
+                                            });
+                                          },
+                                        ),
+                                        const Divider(color: Colors.grey),
+                                        ListTile(
+                                          leading: Icon(Icons.delete,
+                                              color: Colors.grey[700]),
+                                          title: const Text("Delete",
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold)),
+                                          onTap: () {
+                                            Navigator.pop(context);
+                                            deleteVault(vault.id);
+                                          },
                                         ),
                                       ],
                                     ),
-                                    const Spacer(),
-                                    DropdownButtonHideUnderline(
-                                      child: DropdownButton2<String>(
-                                        customButton: const Icon(
-                                          Icons.menu,
-                                          size: 20,
-                                          color: Colors.white,
-                                        ),
-                                        items: items
-                                            .map((String item) =>
-                                                DropdownMenuItem(
-                                                  value: item,
-                                                  child: Icon(
-                                                    icons[items.indexOf(item)],
-                                                    size: 20,
-                                                    color: colors[
-                                                        items.indexOf(item)],
-                                                  ),
-                                                ))
-                                            .toList(),
-                                        value: selectedValue,
-                                        onChanged: (String? value) {
-                                          if (value == "Update") {
-                                            print(eachVault.team);
-                                            Get.to(const AddVaultScreen(),
-                                                arguments: {
-                                                  'id': eachVault.id,
-                                                  'name': eachVault.name,
-                                                  'team': eachVault.team
-                                                });
-                                          } else if (value == "Share") {
-                                            // sendPassword(
-                                            //     eachPassword.password_id ??
-                                            //         0);
-                                          } else {
-                                            deleteVault(eachVault.id);
-                                          }
-                                        },
-                                        buttonStyleData: const ButtonStyleData(
-                                          height: 40,
-                                          width: 45,
-                                        ),
-                                        dropdownStyleData: DropdownStyleData(
-                                          maxHeight: 200,
-                                          width: 50,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            color: Colors.white,
-                                          ),
-                                          offset: const Offset(-10, 0),
-                                        ),
-                                        menuItemStyleData:
-                                            const MenuItemStyleData(
-                                          height: 40,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 16,
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  } else {
-                    return const Center(
-                      child: Text(
-                        "Empty, No Data",
-                        style: TextStyle(color: Colors.grey),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 12.0),
                       ),
                     );
-                  }
-                })
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        elevation: 8,
-        onPressed: () {
-          Get.to(const AddVaultScreen());
-        },
-        backgroundColor: Colors.white,
-        child: const Icon(
-          Icons.add,
-          color: Colors.redAccent,
-        ),
-      ),
-    );
-  }
-
-  Widget showSearchBarWidget() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 18,
-      ),
-      child: TextField(
-        style: const TextStyle(color: Colors.black),
-        controller: searchController,
-        decoration: InputDecoration(
-            enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(width: 2, color: primary1Color)),
-            focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(width: 2, color: primary2Color)),
-            border: OutlineInputBorder(
-                borderSide: BorderSide(width: 2, color: primary2Color)),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            suffixIcon: IconButton(
-              onPressed: () {
-                setState(() {
-                  searchController.clear();
-                });
-              },
-              icon: Icon(
-                Icons.clear,
-                color: primary1Color,
-              ),
-            ),
-            hintText: "Search all vaults",
-            hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
-            prefixIcon: IconButton(
-              onPressed: () {
-                //getPassword(searchController.text);
-                setState(() {});
-              },
-              icon: Icon(Icons.search, color: primary1Color),
-            )),
-      ),
+                  },
+                ),
     );
   }
 }
