@@ -863,7 +863,7 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
                   ?.then((result) {
                 if (result == 'refresh') {
                   setState(() {
-                    fetchItems(widget.teamID!);
+                    fetchItems(widget.id);
                   });
                 }
               });
@@ -880,8 +880,15 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
             ),
             onTap: () async {
               Navigator.pop(context);
-              Get.to(const Add2FileScreen(),
-                  arguments: {'vault': widget.id, 'team': widget.teamID});
+              await Get.to(() => const Add2FileScreen(),
+                      arguments: {'vault': widget.id, 'team': widget.teamID})
+                  ?.then((result) {
+                if (result == 'refresh') {
+                  setState(() {
+                    fetchItems(widget.id);
+                  });
+                }
+              });
             },
           ),
         ]),
@@ -926,7 +933,7 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
                     })?.then((result) {
                       if (result == 'refresh') {
                         setState(() {
-                          fetchItems(widget.teamID!);
+                          fetchItems(widget.id);
                         });
                       }
                     });
@@ -1085,16 +1092,23 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold),
                                         ),
-                                        onTap: () {
+                                        onTap: () async {
                                           Navigator.pop(context);
-                                          Get.to(const Add2PasswordScreen(),
+                                          await Get.to(
+                                              () => const Add2PasswordScreen(),
                                               arguments: {
                                                 'id': info.id,
                                                 'vault': info.vault,
                                                 'username': info.loginUsername,
                                                 'password': info.loginPassword,
                                                 'team': widget.teamID
+                                              })?.then((result) {
+                                            if (result == 'refresh') {
+                                              setState(() {
+                                                fetchItems(widget.id);
                                               });
+                                            }
+                                          });
                                         },
                                       ),
                                       const Divider(color: Colors.grey),
@@ -1174,9 +1188,17 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {
-                    Get.to(const Add2FileScreen(),
-                        arguments: {'vault': widget.id, 'team': widget.teamID});
+                  onPressed: () async {
+                    await Get.to(() => const Add2FileScreen(), arguments: {
+                      'vault': widget.id,
+                      'team': widget.teamID
+                    })?.then((result) {
+                      if (result == 'refresh') {
+                        setState(() {
+                          fetchItems(widget.id);
+                        });
+                      }
+                    });
                   },
                   child: const Text(
                     "Upload File",

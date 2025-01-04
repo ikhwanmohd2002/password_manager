@@ -13,6 +13,7 @@ import 'package:password_manager/model/vault_info.dart';
 import 'package:password_manager/model/vault_items.dart';
 import 'package:password_manager/screens/add_vault_screen.dart';
 import 'package:password_manager/screens/vault_info_screen.dart';
+import 'package:password_manager/user_preferences/current_user.dart';
 import 'package:password_manager/user_preferences/userPreferences.dart';
 import 'package:intl/intl.dart';
 
@@ -25,6 +26,7 @@ class TeamsInfoScreen extends StatefulWidget {
 
 class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
     with SingleTickerProviderStateMixin {
+  CurrentUser currentUser = Get.put(CurrentUser());
   late TabController _tabController;
   List<bool> _isExpanded = [];
   List<TeamMember> teamMembers1 = [];
@@ -340,6 +342,251 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
     }
   }
 
+  exitTeam() async {
+    try {
+      var resultResponse = await Get.dialog(
+        AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.redAccent,
+                size: 28,
+              ),
+              SizedBox(width: 8),
+              Text(
+                "Exit Team",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.redAccent,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Divider(color: Colors.grey.shade300),
+              const SizedBox(height: 16),
+              Text(
+                "Are you sure you want to exit this team? This action cannot be undone.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Get.back(); // Dismiss the dialog
+              },
+              child: const Text(
+                "Cancel",
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              onPressed: () {
+                Get.back(result: "leave");
+              },
+              child: const Text(
+                "Leave Team",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (resultResponse == "leave") {
+        int? membershipID = teamMembers1
+            .firstWhere((member) => member.user == currentUser.user.id)
+            .id;
+        String? token = await RememberUserPrefs.readToken();
+
+        var res = await http.delete(
+          Uri.parse("${API.teamMembershipInfoIntelliVault}$membershipID/"),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Token $token',
+          },
+        );
+
+        if (res.statusCode == 204) {
+          // Show success SnackBar
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Exited team successfully."),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+          Get.back();
+        } else {
+          // Show error SnackBar
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Failed to exit team."),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Show error SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${e.toString()}"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  removeFromTeam(int id, String name) async {
+    try {
+      var resultResponse = await Get.dialog(
+        AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.redAccent,
+                size: 28,
+              ),
+              SizedBox(width: 8),
+              Text(
+                "Exit Team",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.redAccent,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Divider(color: Colors.grey.shade300),
+              const SizedBox(height: 16),
+              Text(
+                "Are you sure you want to remove $name from this team? This action cannot be undone.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Get.back(); // Dismiss the dialog
+              },
+              child: const Text(
+                "Cancel",
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              onPressed: () {
+                Get.back(result: "remove");
+              },
+              child: const Text(
+                "Remove",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (resultResponse == "remove") {
+        String? token = await RememberUserPrefs.readToken();
+
+        var res = await http.delete(
+          Uri.parse("${API.teamMembershipInfoIntelliVault}$id/"),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Token $token',
+          },
+        );
+
+        if (res.statusCode == 204) {
+          // Show success SnackBar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Removed $name from team successfully."),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          Get.back();
+        } else {
+          // Show error SnackBar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Failed to remove $name from team."),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Show error SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${e.toString()}"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -397,8 +644,22 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
           if (isAdmin)
             IconButton(
               icon: const Icon(Icons.add),
+              onPressed: () async {
+                await Get.to(() => const Add2VaultScreen(),
+                    arguments: {'team': teamId})?.then((result) {
+                  if (result == 'refresh') {
+                    setState(() {
+                      fetchVaults();
+                    });
+                  }
+                });
+              },
+            ),
+          if (!isAdmin)
+            IconButton(
+              icon: const Icon(Icons.exit_to_app),
               onPressed: () {
-                Get.to(const Add2VaultScreen(), arguments: {'team': teamId});
+                exitTeam();
               },
             ),
         ],
@@ -465,12 +726,14 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
                   ),
                 ),
                 const SizedBox(width: 8), // Add spacing between role and icon
-                IconButton(
-                  icon: const Icon(Icons.more_vert),
-                  onPressed: () {
-                    // Handle member actions
-                  },
-                ),
+                if (!isAdmin && teamMembers1[index].user != currentUser.user.id)
+                  IconButton(
+                    icon: const Icon(Icons.person_remove),
+                    onPressed: () {
+                      removeFromTeam(
+                          teamMembers1[index].id, teamMembers1[index].username);
+                    },
+                  ),
               ],
             ),
           ),
@@ -507,9 +770,15 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () {
-                    Get.to(const Add2VaultScreen(),
-                        arguments: {'team': teamId});
+                  onPressed: () async {
+                    await Get.to(() => const Add2VaultScreen(),
+                        arguments: {'team': teamId})?.then((result) {
+                      if (result == 'refresh') {
+                        setState(() {
+                          fetchVaults();
+                        });
+                      }
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
@@ -623,14 +892,21 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
                                       title: const Text("Edit",
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold)),
-                                      onTap: () {
+                                      onTap: () async {
                                         Navigator.pop(context);
-                                        Get.to(const Add2VaultScreen(),
+                                        await Get.to(
+                                            () => const Add2VaultScreen(),
                                             arguments: {
                                               'id': vaults1[index].id,
                                               'name': vaults1[index].name,
                                               'team': vaults1[index].team
+                                            })?.then((result) {
+                                          if (result == 'refresh') {
+                                            setState(() {
+                                              fetchVaults();
                                             });
+                                          }
+                                        });
                                       },
                                     ),
                                   if (isAdmin)

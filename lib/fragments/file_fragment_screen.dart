@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
@@ -35,15 +36,17 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
   TextEditingController sharingPasswordController = TextEditingController();
   TextEditingController sharedAccessPasswordController =
       TextEditingController();
+  TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     RememberUserPrefs().checkTokenValidity();
-    fetchFiles();
+    fetchFiles(null);
   }
 
-  void fetchFiles() async {
+  void fetchFiles(String? search) async {
+    List<File1> fetchedFiles = [];
     try {
       String? token = await RememberUserPrefs.readToken();
 
@@ -54,13 +57,24 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
 
       if (res.statusCode == 200) {
         var responseBodyOfGetPassword = jsonDecode(res.body);
+        fetchedFiles = (responseBodyOfGetPassword as List)
+            .map((eachFile) => File1.fromJson(eachFile))
+            .toList();
 
-        setState(() {
-          files = (responseBodyOfGetPassword as List)
-              .map((eachFile) => File1.fromJson(eachFile))
-              .toList();
-          isLoading = false;
-        });
+        if (search != null) {
+          setState(() {
+            files = fetchedFiles
+                .where((file) =>
+                    file.file_name.toLowerCase().contains(search.toLowerCase()))
+                .toList();
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            files = fetchedFiles;
+            isLoading = false;
+          });
+        }
       } else {
         setState(() {
           isLoading = false;
@@ -562,6 +576,25 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
     }
   }
 
+  Widget searchBar() {
+    return TextField(
+      controller: searchController,
+      onChanged: (value) {
+        fetchFiles(value);
+      },
+      decoration: InputDecoration(
+        hintText: "Search...",
+        prefixIcon: Icon(Icons.search),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: EdgeInsets.symmetric(vertical: 10.0),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -578,106 +611,160 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              Get.to(const Add2FileScreen());
+            onPressed: () async {
+              await Get.to(() => const Add2FileScreen())?.then((result) {
+                if (result == 'refresh') {
+                  setState(() {
+                    fetchFiles(null);
+                  });
+                }
+              });
             },
           ),
         ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : files.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.folder_open, // Represents files or a folder
-                        size: 80,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        "Oh no, no files found!",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Upload your first file to get started!",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {
-                          Get.to(const Add2FileScreen());
-                        },
-                        child: const Text(
-                          "Upload File",
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: files.length,
-                  itemBuilder: (context, index) {
-                    String file = files[index].file_name;
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      elevation: 3,
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        leading: const CircleAvatar(
-                          backgroundColor: Colors.grey,
-                          child: Icon(
-                            Icons.description,
-                            color: Colors.white,
-                          ),
-                        ),
-                        title: Text(
-                          file,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        trailing: Row(
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8),
+            child: searchBar(),
+          ),
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : (files.isEmpty && searchController.text == "")
+                    ? Center(
+                        child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.download),
-                              onPressed: () {
-                                downloadFile(
-                                    files[index].id, files[index].file_name);
-                              },
+                            Icon(
+                              Icons.folder_open, // Represents files or a folder
+                              size: 80,
+                              color: Colors.grey.shade400,
                             ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.share,
+                            const SizedBox(height: 20),
+                            Text(
+                              "Oh no, no files found!",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey.shade600,
                               ),
-                              onPressed: () {
-                                shareFile(files[index].id);
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Upload your first file to get started!",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton(
+                              onPressed: () async {
+                                await Get.to(() => const Add2FileScreen())
+                                    ?.then((result) {
+                                  if (result == 'refresh') {
+                                    setState(() {
+                                      fetchFiles(null);
+                                    });
+                                  }
+                                });
                               },
+                              child: const Text(
+                                "Upload File",
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      )
+                    : (files.isEmpty && searchController.text != "")
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off,
+                                  size: 64,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  "No files match your search.",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Try searching with a different keyword.",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: files.length,
+                            itemBuilder: (context, index) {
+                              String file = files[index].file_name;
+                              return Card(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                elevation: 3,
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  leading: const CircleAvatar(
+                                    backgroundColor: Colors.grey,
+                                    child: Icon(
+                                      Icons.description,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    file,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.download),
+                                        onPressed: () {
+                                          downloadFile(files[index].id,
+                                              files[index].file_name);
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.share,
+                                        ),
+                                        onPressed: () {
+                                          shareFile(files[index].id);
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -355,7 +355,7 @@ class _Add2PasswordScreenState extends State<Add2PasswordScreen> {
         });
 
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.back();
+          Get.back(result: 'refresh');
         });
       } else {
         // Show error snackbar

@@ -265,9 +265,15 @@ class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () {
-                          Get.to(
-                              const Add2VaultScreen()); // Navigate to vault creation screen
+                        onPressed: () async {
+                          await Get.to(() => const Add2VaultScreen())
+                              ?.then((result) {
+                            if (result == 'refresh') {
+                              setState(() {
+                                fetchVaults();
+                              });
+                            }
+                          });
                         },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(

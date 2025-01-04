@@ -1,5 +1,4 @@
 class API {
-
   static const hostConnectIntelliVault = "http://10.0.2.2:8000";
   static const registerIntelliVault =
       "$hostConnectIntelliVault/dj-rest-auth/registration/";
@@ -18,6 +17,8 @@ class API {
       "$hostConnectIntelliVault/vault/api/team-vault-action-request/";
   static const teamInfoIntelliVault =
       "$hostConnectIntelliVault/collaboration/api/team/";
+  static const teamMembershipInfoIntelliVault =
+      "$hostConnectIntelliVault/collaboration/api/team-membership/";
   static const invitationInfoIntelliVault =
       "$hostConnectIntelliVault/collaboration/invitations/";
   static const invitationSendIntelliVault =

@@ -30,11 +30,12 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
   TextEditingController sharingPasswordController = TextEditingController();
 
   List<SharedPasswordItem> rows = [];
+  TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    fetchPasswords();
+    fetchPasswords(null);
   }
 
   Future<void> sharePassword(int id) async {
@@ -394,7 +395,7 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
     }
   }
 
-  Future<void> fetchPasswords() async {
+  Future<void> fetchPasswords(String? search) async {
     try {
       String? token = await RememberUserPrefs.readToken();
 
@@ -410,10 +411,21 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
         for (var eachPassword in (responseBodyOfGetPassword as List)) {
           fetchedPasswords.add(Password1.fromJson(eachPassword));
         }
-        setState(() {
-          passwords = fetchedPasswords;
-          isLoadingPasswords = false;
-        });
+        if (search != null) {
+          setState(() {
+            passwords = fetchedPasswords
+                .where((password) => password.login_username!
+                    .toLowerCase()
+                    .contains(search.toLowerCase()))
+                .toList();
+            isLoadingPasswords = false;
+          });
+        } else {
+          setState(() {
+            passwords = fetchedPasswords;
+            isLoadingPasswords = false;
+          });
+        }
       } else {
         setState(() {
           isLoadingPasswords = false;
@@ -438,6 +450,25 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  Widget searchBar() {
+    return TextField(
+      controller: searchController,
+      onChanged: (value) {
+        fetchPasswords(value);
+      },
+      decoration: InputDecoration(
+        hintText: "Search...",
+        prefixIcon: Icon(Icons.search),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: EdgeInsets.symmetric(vertical: 10.0),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -452,7 +483,7 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
               await Get.to(() => const Add2PasswordScreen())?.then((result) {
                 if (result == 'refresh') {
                   setState(() {
-                    fetchPasswords();
+                    fetchPasswords(null);
                   });
                 }
               });
@@ -463,270 +494,319 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
       body: Column(
         children: [
           // Main Passwords Section
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8),
+            child: searchBar(),
+          ),
           Expanded(
             child: isLoadingPasswords
                 ? const Center(child: CircularProgressIndicator())
-                : passwords.isEmpty
+                : (passwords.isEmpty && searchController.text == "")
                     ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.vpn_key_outlined,
-                              size: 64,
-                              color: Colors.grey.shade400,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              "Oh no, no passwords saved!",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade600,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.vpn_key_outlined,
+                                size: 64,
+                                color: Colors.grey.shade400,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "Save your first password to get started!",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade500,
+                              const SizedBox(height: 16),
+                              Text(
+                                "Oh no, no passwords saved!",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade600,
+                                ),
                               ),
-                            ),
-                            ElevatedButton(
-                              onPressed: () async {
-                                await Get.to(() => const Add2PasswordScreen())
-                                    ?.then((result) {
-                                  if (result == 'refresh') {
-                                    setState(() {
-                                      fetchPasswords();
-                                    });
-                                  }
-                                });
-                              },
-                              child: const Text("Create Password"),
-                            ),
-                          ],
+                              const SizedBox(height: 8),
+                              Text(
+                                "Save your first password to get started!",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  await Get.to(() => const Add2PasswordScreen())
+                                      ?.then((result) {
+                                    if (result == 'refresh') {
+                                      setState(() {
+                                        fetchPasswords(null);
+                                      });
+                                    }
+                                  });
+                                },
+                                child: const Text("Create Password"),
+                              ),
+                            ],
+                          ),
                         ),
                       )
-                    : ListView.builder(
-                        itemCount: passwords.length,
-                        itemBuilder: (context, index) {
-                          // Boolean to track visibility state
-                          bool isPasswordVisible = false;
-
-                          return StatefulBuilder(
-                            builder: (context, setState) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 4.0, horizontal: 8.0),
-                                child: Card(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8.0),
-                                  ),
-                                  elevation: 2,
-                                  color: Colors.white,
-                                  child: ListTile(
-                                    leading: const CircleAvatar(
-                                      backgroundColor: Colors.grey,
-                                      child:
-                                          Icon(Icons.lock, color: Colors.white),
-                                    ),
-                                    title: Text(
-                                      passwords[index].login_username!,
-                                      style: const TextStyle(
-                                          fontSize: 14.0,
-                                          fontWeight: FontWeight.w500),
-                                    ),
-                                    subtitle: Text(
-                                      isPasswordVisible
-                                          ? passwords[index].decrypted_password!
-                                          : '••••••••',
-                                      style: const TextStyle(
-                                          fontSize: 12.0, color: Colors.grey),
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: Icon(
-                                            isPasswordVisible
-                                                ? Icons.visibility
-                                                : Icons.visibility_off,
-                                            color: Colors.grey,
-                                          ),
-                                          onPressed: () {
-                                            // Toggle password visibility
-                                            setState(() {
-                                              isPasswordVisible =
-                                                  !isPasswordVisible;
-                                            });
-                                          },
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.more_vert,
-                                              color: Colors.grey),
-                                          onPressed: () {
-                                            showModalBottomSheet(
-                                              context: context,
-                                              shape:
-                                                  const RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.vertical(
-                                                  top: Radius.circular(
-                                                      20), // Add curved edges
-                                                ),
-                                              ),
-                                              builder: (context) => Container(
-                                                padding:
-                                                    const EdgeInsets.all(16),
-                                                decoration: const BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.vertical(
-                                                    top: Radius.circular(
-                                                        20), // Curved edges match the shape
-                                                  ),
-                                                  color: Colors
-                                                      .white, // Background color
-                                                ),
-                                                child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      // Add a handle to indicate draggable bottom sheet
-                                                      Container(
-                                                        width: 50,
-                                                        height: 5,
-                                                        margin: const EdgeInsets
-                                                            .only(bottom: 16),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color:
-                                                              Colors.grey[300],
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(10),
-                                                        ),
-                                                      ),
-
-                                                      // Copy Username Option
-                                                      ListTile(
-                                                        leading: Icon(
-                                                            Icons.copy,
-                                                            color: Colors
-                                                                .grey[700]),
-                                                        title: const Text(
-                                                          "Copy Username",
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
-                                                        ),
-                                                        onTap: () async {
-                                                          await Clipboard
-                                                              .setData(
-                                                            ClipboardData(
-                                                                text: passwords[
-                                                                        index]
-                                                                    .login_username
-                                                                    .toString()),
-                                                          );
-                                                          ScaffoldMessenger.of(
-                                                                  context)
-                                                              .showSnackBar(
-                                                            const SnackBar(
-                                                              content: Text(
-                                                                  "Username copied to clipboard"),
-                                                              duration:
-                                                                  Duration(
-                                                                      seconds:
-                                                                          2),
-                                                            ),
-                                                          );
-                                                          Navigator.pop(
-                                                              context);
-                                                        },
-                                                      ),
-                                                      const Divider(
-                                                          color: Colors.grey),
-
-                                                      // Copy Password Option
-                                                      ListTile(
-                                                        leading: Icon(
-                                                            Icons.copy,
-                                                            color: Colors
-                                                                .grey[700]),
-                                                        title: const Text(
-                                                          "Copy Password",
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
-                                                        ),
-                                                        onTap: () async {
-                                                          await Clipboard
-                                                              .setData(
-                                                            ClipboardData(
-                                                                text: passwords[
-                                                                        index]
-                                                                    .decrypted_password
-                                                                    .toString()),
-                                                          );
-                                                          ScaffoldMessenger.of(
-                                                                  context)
-                                                              .showSnackBar(
-                                                            const SnackBar(
-                                                              content: Text(
-                                                                  "Password copied to clipboard"),
-                                                              duration:
-                                                                  Duration(
-                                                                      seconds:
-                                                                          2),
-                                                            ),
-                                                          );
-                                                          Navigator.pop(
-                                                              context);
-                                                        },
-                                                      ),
-                                                      const Divider(
-                                                          color: Colors.grey),
-
-                                                      // Share Option
-                                                      ListTile(
-                                                        leading: Icon(
-                                                            Icons.share,
-                                                            color: Colors
-                                                                .grey[700]),
-                                                        title: const Text(
-                                                          "Share",
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
-                                                        ),
-                                                        onTap: () {
-                                                          Navigator.pop(
-                                                              context);
-                                                          sharePassword(
-                                                              passwords[index]
-                                                                  .id!);
-                                                        },
-                                                      ),
-                                                    ]),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
+                    : (passwords.isEmpty && searchController.text != "")
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off,
+                                  size: 64,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  "No passwords match your search.",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade600,
                                   ),
                                 ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Try searching with a different keyword.",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: passwords.length,
+                            itemBuilder: (context, index) {
+                              // Boolean to track visibility state
+                              bool isPasswordVisible = false;
+
+                              return StatefulBuilder(
+                                builder: (context, setState) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 4.0, horizontal: 8.0),
+                                    child: Card(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      elevation: 2,
+                                      color: Colors.white,
+                                      child: ListTile(
+                                        leading: const CircleAvatar(
+                                          backgroundColor: Colors.grey,
+                                          child: Icon(Icons.lock,
+                                              color: Colors.white),
+                                        ),
+                                        title: Text(
+                                          passwords[index].login_username!,
+                                          style: const TextStyle(
+                                              fontSize: 14.0,
+                                              fontWeight: FontWeight.w500),
+                                        ),
+                                        subtitle: Text(
+                                          isPasswordVisible
+                                              ? passwords[index]
+                                                  .decrypted_password!
+                                              : '••••••••',
+                                          style: const TextStyle(
+                                              fontSize: 12.0,
+                                              color: Colors.grey),
+                                        ),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: Icon(
+                                                isPasswordVisible
+                                                    ? Icons.visibility
+                                                    : Icons.visibility_off,
+                                                color: Colors.grey,
+                                              ),
+                                              onPressed: () {
+                                                // Toggle password visibility
+                                                setState(() {
+                                                  isPasswordVisible =
+                                                      !isPasswordVisible;
+                                                });
+                                              },
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.more_vert,
+                                                  color: Colors.grey),
+                                              onPressed: () {
+                                                showModalBottomSheet(
+                                                  context: context,
+                                                  shape:
+                                                      const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.vertical(
+                                                      top: Radius.circular(
+                                                          20), // Add curved edges
+                                                    ),
+                                                  ),
+                                                  builder: (context) =>
+                                                      Container(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            16),
+                                                    decoration:
+                                                        const BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.vertical(
+                                                        top: Radius.circular(
+                                                            20), // Curved edges match the shape
+                                                      ),
+                                                      color: Colors
+                                                          .white, // Background color
+                                                    ),
+                                                    child: Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          // Add a handle to indicate draggable bottom sheet
+                                                          Container(
+                                                            width: 50,
+                                                            height: 5,
+                                                            margin:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    bottom: 16),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: Colors
+                                                                  .grey[300],
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          10),
+                                                            ),
+                                                          ),
+
+                                                          // Copy Username Option
+                                                          ListTile(
+                                                            leading: Icon(
+                                                                Icons.copy,
+                                                                color: Colors
+                                                                    .grey[700]),
+                                                            title: const Text(
+                                                              "Copy Username",
+                                                              style: TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold),
+                                                            ),
+                                                            onTap: () async {
+                                                              await Clipboard
+                                                                  .setData(
+                                                                ClipboardData(
+                                                                    text: passwords[
+                                                                            index]
+                                                                        .login_username
+                                                                        .toString()),
+                                                              );
+                                                              ScaffoldMessenger
+                                                                      .of(context)
+                                                                  .showSnackBar(
+                                                                const SnackBar(
+                                                                  content: Text(
+                                                                      "Username copied to clipboard"),
+                                                                  duration:
+                                                                      Duration(
+                                                                          seconds:
+                                                                              2),
+                                                                ),
+                                                              );
+                                                              Navigator.pop(
+                                                                  context);
+                                                            },
+                                                          ),
+                                                          const Divider(
+                                                              color:
+                                                                  Colors.grey),
+
+                                                          // Copy Password Option
+                                                          ListTile(
+                                                            leading: Icon(
+                                                                Icons.copy,
+                                                                color: Colors
+                                                                    .grey[700]),
+                                                            title: const Text(
+                                                              "Copy Password",
+                                                              style: TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold),
+                                                            ),
+                                                            onTap: () async {
+                                                              await Clipboard
+                                                                  .setData(
+                                                                ClipboardData(
+                                                                    text: passwords[
+                                                                            index]
+                                                                        .decrypted_password
+                                                                        .toString()),
+                                                              );
+                                                              ScaffoldMessenger
+                                                                      .of(context)
+                                                                  .showSnackBar(
+                                                                const SnackBar(
+                                                                  content: Text(
+                                                                      "Password copied to clipboard"),
+                                                                  duration:
+                                                                      Duration(
+                                                                          seconds:
+                                                                              2),
+                                                                ),
+                                                              );
+                                                              Navigator.pop(
+                                                                  context);
+                                                            },
+                                                          ),
+                                                          const Divider(
+                                                              color:
+                                                                  Colors.grey),
+
+                                                          // Share Option
+                                                          ListTile(
+                                                            leading: Icon(
+                                                                Icons.share,
+                                                                color: Colors
+                                                                    .grey[700]),
+                                                            title: const Text(
+                                                              "Share",
+                                                              style: TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold),
+                                                            ),
+                                                            onTap: () {
+                                                              Navigator.pop(
+                                                                  context);
+                                                              sharePassword(
+                                                                  passwords[
+                                                                          index]
+                                                                      .id!);
+                                                            },
+                                                          ),
+                                                        ]),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
                               );
                             },
-                          );
-                        },
-                      ),
+                          ),
           ),
           // Shared Passwords Section
           Container(

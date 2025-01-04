@@ -18,8 +18,8 @@ class DashboardOfFragments extends StatelessWidget {
   final List<Widget> _fragmentScreens = [
     const Home1FragmentScreen(),
     File1FragmentScreen(),
-    const TeamsInfoFragmentScreen(),
     const Vault1FragmentScreen(),
+    const TeamsInfoFragmentScreen(),
     const PasswordFragmentScreen(),
     const SettingsFragmentScreen(),
   ];
@@ -35,14 +35,14 @@ class DashboardOfFragments extends StatelessWidget {
       "label": "File", // Represents files and folders
     },
     {
-      "active_icon": Icons.group,
-      "non_active_icon": Icons.group_outlined,
-      "label": "Team", // Represents team collaboration
-    },
-    {
       "active_icon": Icons.shield_rounded,
       "non_active_icon": Icons.shield_outlined,
       "label": "Vault", // Represents vault/security features
+    },
+    {
+      "active_icon": Icons.group,
+      "non_active_icon": Icons.group_outlined,
+      "label": "Team", // Represents team collaboration
     },
     {
       "active_icon": Icons.widgets_rounded,

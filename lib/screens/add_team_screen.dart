@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
 import 'package:password_manager/controllers/navigation_controller.dart';
-import 'package:password_manager/fragments/dashboard_of_fragments.dart';
 import 'package:password_manager/model/team.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 import 'package:password_manager/user_preferences/userPreferences.dart';
@@ -49,7 +48,7 @@ class _Add1TeamScreenState extends State<Add1TeamScreen> {
         nameController.clear();
 
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.off(() => DashboardOfFragments(), arguments: 2);
+          Get.back(result: 'refresh');
         });
       } else {
         // ignore: use_build_context_synchronously
@@ -96,7 +95,7 @@ class _Add1TeamScreenState extends State<Add1TeamScreen> {
           ),
         );
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.to(DashboardOfFragments());
+          Get.back(result: 'refresh');
         });
       } else if (res.statusCode == 404) {
         // ignore: use_build_context_synchronously
@@ -108,7 +107,7 @@ class _Add1TeamScreenState extends State<Add1TeamScreen> {
           ),
         );
         Future.delayed(const Duration(milliseconds: 2000), () {
-          Get.to(DashboardOfFragments());
+          Get.back(result: 'refresh');
         });
       } else {
         // ignore: use_build_context_synchronously

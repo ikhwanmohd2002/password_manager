@@ -273,6 +273,7 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
           ),
         );
         setState(() {
+          fetchTeams();
           fetchInvitations();
         }); // Refresh UI if needed
       } else {
@@ -406,6 +407,16 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
             ),
           );
           invitationController.clear();
+        } else if (res.statusCode == 403) {
+          // ignore: use_build_context_synchronously
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Only admins can send invitations"),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          invitationController.clear();
         } else if (res.statusCode == 404) {
           // ignore: use_build_context_synchronously
           ScaffoldMessenger.of(context).showSnackBar(
@@ -507,9 +518,15 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
           IconButton(
             icon: const Icon(Icons.add), // Add team icon
             tooltip: "Add Team", // Tooltip for accessibility
-            onPressed: () {
+            onPressed: () async {
               // Navigate to AddTeamScreen using Get
-              Get.to(() => const Add1TeamScreen());
+              await Get.to(() => const Add1TeamScreen())?.then((result) {
+                if (result == 'refresh') {
+                  setState(() {
+                    fetchTeams();
+                  });
+                }
+              });
             },
           ),
         ],
@@ -517,6 +534,7 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
       body: Stack(
         children: [
           // Teams List or Empty State
+
           isLoadingTeams
               ? const Center(child: CircularProgressIndicator())
               : teams.isEmpty
@@ -545,8 +563,15 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: () {
-                              Get.to(const Add1TeamScreen());
+                            onPressed: () async {
+                              await Get.to(() => const Add1TeamScreen())
+                                  ?.then((result) {
+                                if (result == 'refresh') {
+                                  setState(() {
+                                    fetchTeams();
+                                  });
+                                }
+                              });
                             },
                             child: const Text("Create Team"),
                           ),
@@ -626,7 +651,8 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                                                         FontWeight.bold)),
                                             onTap: () async {
                                               Navigator.pop(context);
-                                              Get.to(const TeamsInfoScreen(),
+                                              await Get.to(
+                                                  () => const TeamsInfoScreen(),
                                                   arguments: {
                                                     "teamId": teams[index].id,
                                                     "teamName":
@@ -636,7 +662,13 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                                                                 teams[index].id)
                                                             ? "admin"
                                                             : "member"
+                                                  })?.then((result) {
+                                                if (result == 'refresh') {
+                                                  setState(() {
+                                                    fetchTeams();
                                                   });
+                                                }
+                                              });
                                             },
                                           ),
                                           const Divider(),
@@ -648,15 +680,20 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                                                 style: TextStyle(
                                                     fontWeight:
                                                         FontWeight.bold)),
-                                            onTap: () {
+                                            onTap: () async {
                                               Navigator.pop(context);
-                                              Get.to(
-                                                const Add1TeamScreen(),
-                                                arguments: {
-                                                  'id': team.id,
-                                                  'name': team.name,
-                                                },
-                                              );
+                                              await Get.to(
+                                                  () => const Add1TeamScreen(),
+                                                  arguments: {
+                                                    'id': team.id,
+                                                    'name': team.name,
+                                                  })?.then((result) {
+                                                if (result == 'refresh') {
+                                                  setState(() {
+                                                    fetchTeams();
+                                                  });
+                                                }
+                                              });
                                             },
                                           ),
                                           const Divider(),
