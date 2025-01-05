@@ -32,7 +32,6 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
   List<TeamMember> teamMembers1 = [];
   List<Request> requests1 = [];
   List<VaultInfo> vaults1 = [];
-  List<int> vaultsItemsTotal = [];
   bool isLoading = true;
   String? teamName;
   String? role;
@@ -65,7 +64,6 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
 
   Future<void> fetchVaults() async {
     List<VaultInfo> listOfVault = [];
-    List<int> listOfVaultsItemsTotal = [];
     try {
       String? token = await RememberUserPrefs.readToken();
       final response = await http.get(
@@ -77,13 +75,20 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
       if (response.statusCode == 200) {
         var responseBodyOfGetVault = jsonDecode(response.body);
         for (var eachVault in (responseBodyOfGetVault as List)) {
-          listOfVault.add(VaultInfo.fromJson(eachVault));
+          // Create a VaultInfo object from JSON
+          var vault = VaultInfo.fromJson(eachVault);
+
+          // Fetch total items for this vault
           int totalItems = await fetchTotalItems(eachVault['id']);
-          listOfVaultsItemsTotal.add(totalItems);
+
+          // Append totalItems to the VaultInfo object
+          vault.totalItems = totalItems;
+
+          // Add the updated VaultInfo object to the list
+          listOfVault.add(vault);
         }
         setState(() {
           vaults1 = listOfVault;
-          vaultsItemsTotal = listOfVaultsItemsTotal;
           isLoading = false;
         });
       } else {
@@ -442,7 +447,7 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
               duration: Duration(seconds: 2),
             ),
           );
-          Get.back();
+          Get.back(result: 'refresh');
         } else {
           // Show error SnackBar
           ScaffoldMessenger.of(context).showSnackBar(
@@ -483,7 +488,7 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
               ),
               SizedBox(width: 8),
               Text(
-                "Exit Team",
+                "Remove From Team",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -563,7 +568,9 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
               duration: const Duration(seconds: 2),
             ),
           );
-          Get.back();
+          setState(() {
+            fetchTeamMembers();
+          });
         } else {
           // Show error SnackBar
           ScaffoldMessenger.of(context).showSnackBar(
@@ -830,7 +837,7 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '${vaultsItemsTotal[index]} items',
+                        '${vaults1[index].totalItems} items',
                         style: const TextStyle(
                           fontSize: 12.0,
                           color: Colors.grey,

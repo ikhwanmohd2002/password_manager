@@ -6,9 +6,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
 import 'package:password_manager/model/file1.dart';
+import 'package:password_manager/model/request.dart';
 import 'package:password_manager/model/vault_items.dart';
 import 'package:password_manager/screens/add_file_screen.dart';
 import 'package:password_manager/screens/add_password_screen.dart';
@@ -42,13 +44,26 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
   List<bool> _isPasswordVisible = [];
   List<LoginItem> logininfo1 = [];
   List<File1> files1 = [];
+  List<Request> requests1 = [];
+  List<Request> requestsFiltered = [];
   bool isLoading = false;
+  bool isInTeam = false;
+  String? selectedFilter = "All"; // Default filter
+  List<String> filters = ["All", "Create", "Update", "Delete"];
 
   @override
   void initState() {
     super.initState();
+    if (widget.teamID != null) {
+      isInTeam = true;
+      fetchRequests();
+    }
     fetchItems(widget.id);
-    _tabController = TabController(length: 2, vsync: this);
+    if (isInTeam) {
+      _tabController = TabController(length: 3, vsync: this);
+    } else {
+      _tabController = TabController(length: 2, vsync: this);
+    }
 
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
@@ -61,6 +76,45 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> fetchRequests() async {
+    List<Request> listOfRequest = [];
+    try {
+      String? token = await RememberUserPrefs.readToken();
+      final response = await http.get(
+          Uri.parse(
+              "${API.requestInfoIntelliVault}by-team-vault/?team_vault_id=${widget.id}"),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Token $token'
+          });
+      if (response.statusCode == 200) {
+        var responseBody = jsonDecode(response.body);
+        for (var eachRequest in (responseBody as List)) {
+          listOfRequest.add(Request.fromJson(eachRequest));
+        }
+        setState(() {
+          requests1 = listOfRequest
+              .where((request) => request.status != "pending")
+              .toList()
+            ..sort((a, b) => DateTime.parse(b.authorized_at!).compareTo(
+                DateTime.parse(a.authorized_at!))); // Sort in descending order
+          requestsFiltered = requests1;
+
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load vault activity');
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching vault activity: $e')),
+      );
+    }
   }
 
   Future<void> fetchItems(int id) async {
@@ -803,9 +857,10 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
+          tabs: [
             Tab(text: "Login Info"),
             Tab(text: "Files"),
+            if (isInTeam) Tab(text: "Activity"),
           ],
         ),
       ),
@@ -816,6 +871,7 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
               children: [
                 _buildLoginInfoTab(),
                 _buildFilesTab(),
+                if (isInTeam) _buildVaultActivityTab()
               ],
             ),
     );
@@ -1320,5 +1376,455 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
               );
             },
           );
+  }
+
+  Widget _buildVaultActivityTab() {
+    return Column(
+      children: [
+        _buildFilterButtons(),
+        Expanded(
+          child: requestsFiltered.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.history,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "No Vault Activities Available!",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "All activities are up to date.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  itemCount: requestsFiltered.length,
+                  itemBuilder: (context, index) {
+                    final request = requestsFiltered[index];
+                    String action = request.action; // Action type
+                    final authorizedBy = request.authorized_by?.username ??
+                        "Unknown"; // Authorized by
+                    final authorizedAt =
+                        request.authorized_at; // Authorized at date
+                    final itemType = request.item_type == "logininfo"
+                        ? "Login Info"
+                        : "File";
+
+                    // Define colors based on action type
+                    Color actionColor;
+                    switch (action) {
+                      case "create":
+                        action = "Create";
+                        actionColor = Colors.green;
+                        break;
+                      case "update":
+                        action = "Update";
+                        actionColor = Colors.blue;
+                        break;
+                      case "delete":
+                        action = "Delete";
+                        actionColor = Colors.red;
+                        break;
+                      default:
+                        actionColor = Colors.grey;
+                    }
+
+                    return Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Action, Authorized At, and Status Row
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: actionColor.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    "$action $itemType",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: actionColor,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  formatDate(authorizedAt ?? 'N/A'),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            // Status
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.info,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  "Status:",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    request.status == "approved"
+                                        ? "Accepted"
+                                        : request.status == "rejected"
+                                            ? "Rejected"
+                                            : "Pending",
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: request.status == "approved"
+                                          ? Colors.green
+                                          : request.status == "rejected"
+                                              ? Colors.red
+                                              : Colors.orange,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.person,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  "Requested By:",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    request.requester.username,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.black87,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            // Authorized By
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.person,
+                                  size: 16,
+                                  color: Colors.blue,
+                                ),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  "Authorized By:",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    authorizedBy,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.black87,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            // Item Data Details (Collapsible)
+                            ExpansionTile(
+                              title: const Text(
+                                "Item Details",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              children: [
+                                if (itemType == "Login Info") ...[
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.person,
+                                          size: 16, color: Colors.blue),
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        "Username:",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          request.item_data.login_username ??
+                                              'N/A',
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.black87,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.lock,
+                                          size: 16, color: Colors.redAccent),
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        "Password:",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          request.item_data.login_password ??
+                                              'N/A',
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.black87,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ] else if (itemType == "File") ...[
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.description,
+                                          size: 16, color: Colors.green),
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        "File Name:",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          request.item_data.file_name ?? 'N/A',
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.black87,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.folder,
+                                          size: 16, color: Colors.amber),
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        "File Type:",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          request.item_data.file_name != null &&
+                                                  request.item_data.file_name!
+                                                      .contains('.')
+                                              ? request.item_data.file_name!
+                                                  .split('.')
+                                                  .last
+                                              : 'N/A',
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.black87,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterButtons() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildFilterButton(
+            icon: Icons.add_circle_outline,
+            label: "Create",
+            isSelected: selectedFilter == "Create",
+            onTap: () {
+              setState(() {
+                selectedFilter = selectedFilter == "Create"
+                    ? null
+                    : "Create"; // Toggle filter
+                requestsFiltered = _applyFilter(selectedFilter);
+              });
+            },
+          ),
+          _buildFilterButton(
+            icon: Icons.edit,
+            label: "Update",
+            isSelected: selectedFilter == "Update",
+            onTap: () {
+              setState(() {
+                selectedFilter = selectedFilter == "Update"
+                    ? null
+                    : "Update"; // Toggle filter
+                requestsFiltered = _applyFilter(selectedFilter);
+              });
+            },
+          ),
+          _buildFilterButton(
+            icon: Icons.delete_outline,
+            label: "Delete",
+            isSelected: selectedFilter == "Delete",
+            onTap: () {
+              setState(() {
+                selectedFilter = selectedFilter == "Delete"
+                    ? null
+                    : "Delete"; // Toggle filter
+                requestsFiltered = _applyFilter(selectedFilter);
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterButton({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.shade50 : Colors.white,
+          border: Border.all(
+            color: isSelected ? Colors.blue : Colors.grey.shade300,
+            width: 1.0,
+          ),
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.blue : Colors.grey,
+              size: 18,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13.0,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? Colors.blue : Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Request> _applyFilter(String? filter) {
+    if (filter == null) {
+      // No filter applied, return all requests
+      return requests1;
+    }
+    return requests1
+        .where(
+            (request) => request.action.toLowerCase() == filter.toLowerCase())
+        .toList();
+  }
+
+  String formatDate(String dateStr) {
+    DateTime date = DateTime.parse(dateStr);
+    return DateFormat('yyyy-MM-dd HH:mm').format(date);
   }
 }

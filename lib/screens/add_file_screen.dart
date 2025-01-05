@@ -196,7 +196,7 @@ class _Add2FileScreenState extends State<Add2FileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     //const SizedBox(height: 20),
-                    if (teamID == null)
+                    if (teamID == null && vaultID == null)
                       DropdownButtonFormField<int>(
                         validator: (value) {
                           if (value == null) {

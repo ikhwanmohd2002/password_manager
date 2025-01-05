@@ -174,7 +174,7 @@ class _Add2PasswordScreenState extends State<Add2PasswordScreen> {
                 const SizedBox(height: 16),
 
                 // Vault Dropdown Field
-                if (teamID == null)
+                if (teamID == null && vaultID == null)
                   DropdownButtonFormField<int>(
                     decoration: InputDecoration(
                       border: OutlineInputBorder(

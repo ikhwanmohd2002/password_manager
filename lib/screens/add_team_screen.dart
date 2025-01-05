@@ -24,11 +24,9 @@ class _Add1TeamScreenState extends State<Add1TeamScreen> {
 
   addTeam() async {
     Team teamModel = Team(
-      1,
-      nameController.text.trim(),
-      null,
-      currentUser.user.username,
-    );
+        id: 1,
+        name: nameController.text.trim(),
+        creator: currentUser.user.username);
 
     try {
       String? token = await RememberUserPrefs.readToken();
@@ -74,11 +72,9 @@ class _Add1TeamScreenState extends State<Add1TeamScreen> {
 
   updateTeam(int id) async {
     Team teamModel = Team(
-      id,
-      nameController.text.trim(),
-      null,
-      currentUser.user.username,
-    );
+        id: id,
+        name: nameController.text.trim(),
+        creator: currentUser.user.username);
 
     try {
       String? token = await RememberUserPrefs.readToken();

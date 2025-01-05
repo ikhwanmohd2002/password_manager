@@ -26,24 +26,23 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
   final NavigationController navController = Get.find();
   final currentOnlineUser = Get.put(CurrentUser());
   List<Team> teams = [];
-  List<int> totalTeamMembers = [];
   List<Invitation> pendingInvitations = [];
   bool isLoadingTeams = true;
   bool isLoadingInvitations = true;
   TextEditingController invitationController = TextEditingController();
+  TextEditingController searchController = TextEditingController();
   var formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
-    fetchTeams();
+    fetchTeams(null);
     fetchInvitations();
   }
 
-  Future<void> fetchTeams() async {
+  Future<void> fetchTeams(String? search) async {
     try {
       List<Team> listOfTeam = [];
-      List<int> listOfTotalTeamMembers = [];
 
       String? token = await RememberUserPrefs.readToken();
       var res = await http.get(
@@ -59,20 +58,31 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
 
         // Process each team
         for (var eachTeam in (responseBodyOfGetTeam as List)) {
-          listOfTeam.add(Team.fromJson(eachTeam));
+          var team = Team.fromJson(eachTeam);
 
-          // Fetch total team members for this team
           int totalTeamMembersForTeam =
               await fetchTotalTeamMembers(eachTeam['id']);
-          listOfTotalTeamMembers.add(totalTeamMembersForTeam);
+
+          team.totalTeamMembers = totalTeamMembersForTeam;
+
+          listOfTeam.add(team);
+        }
+        if (search != null) {
+          setState(() {
+            teams = listOfTeam
+                .where((team) =>
+                    team.name.toLowerCase().contains(search.toLowerCase()))
+                .toList();
+            isLoadingTeams = false;
+          });
+        } else {
+          setState(() {
+            teams = listOfTeam;
+            isLoadingTeams = false;
+          });
         }
 
         // Update state once all teams and totals are fetched
-        setState(() {
-          teams = listOfTeam;
-          totalTeamMembers = listOfTotalTeamMembers;
-          isLoadingTeams = false;
-        });
       } else {
         showSnackBar("Error occurred while fetching teams.");
       }
@@ -217,7 +227,7 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
             ),
           );
           setState(() {
-            fetchTeams();
+            fetchTeams(null);
           }); // Refresh the state
         } else if (res.statusCode == 404) {
           // ignore: use_build_context_synchronously
@@ -273,7 +283,7 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
           ),
         );
         setState(() {
-          fetchTeams();
+          fetchTeams(null);
           fetchInvitations();
         }); // Refresh UI if needed
       } else {
@@ -507,6 +517,25 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
     }
   }
 
+  Widget searchBar() {
+    return TextField(
+      controller: searchController,
+      onChanged: (value) {
+        fetchTeams(value);
+      },
+      decoration: InputDecoration(
+        hintText: "Search...",
+        prefixIcon: Icon(Icons.search),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: EdgeInsets.symmetric(vertical: 10.0),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -523,7 +552,7 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
               await Get.to(() => const Add1TeamScreen())?.then((result) {
                 if (result == 'refresh') {
                   setState(() {
-                    fetchTeams();
+                    fetchTeams(null);
                   });
                 }
               });
@@ -534,10 +563,13 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
       body: Stack(
         children: [
           // Teams List or Empty State
-
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8),
+            child: searchBar(),
+          ),
           isLoadingTeams
               ? const Center(child: CircularProgressIndicator())
-              : teams.isEmpty
+              : (teams.isEmpty && searchController.text == "")
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -568,7 +600,7 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                                   ?.then((result) {
                                 if (result == 'refresh') {
                                   setState(() {
-                                    fetchTeams();
+                                    fetchTeams(null);
                                   });
                                 }
                               });
@@ -578,163 +610,199 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                         ],
                       ),
                     )
-                  : Padding(
-                      padding: const EdgeInsets.only(bottom: 100),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        itemCount: teams.length,
-                        itemBuilder: (context, index) {
-                          final team = teams[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                            elevation: 2,
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                              leading: const CircleAvatar(
-                                backgroundColor: Colors.blueAccent,
-                                child: Icon(Icons.group, color: Colors.white),
+                  : (teams.isEmpty && searchController.text != "")
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 64,
+                                color: Colors.grey.shade400,
                               ),
-                              title: Text(
-                                team.name,
-                                style: const TextStyle(
+                              const SizedBox(height: 16),
+                              Text(
+                                "No vaults match your search.",
+                                style: TextStyle(
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  color: Colors.grey.shade600,
                                 ),
                               ),
-                              subtitle: Text(
-                                "${totalTeamMembers[index]} members",
-                                style: TextStyle(color: Colors.grey[700]),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Try searching with a different keyword.",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade500,
+                                ),
                               ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.more_vert),
-                                onPressed: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(20),
-                                      ),
+                            ],
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.only(bottom: 100, top: 70),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            itemCount: teams.length,
+                            itemBuilder: (context, index) {
+                              final team = teams[index];
+                              return Card(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                elevation: 2,
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  leading: const CircleAvatar(
+                                    backgroundColor: Colors.blueAccent,
+                                    child:
+                                        Icon(Icons.group, color: Colors.white),
+                                  ),
+                                  title: Text(
+                                    team.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
                                     ),
-                                    builder: (context) => Container(
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: const BoxDecoration(
-                                        borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(20),
+                                  ),
+                                  subtitle: Text(
+                                    "${team.totalTeamMembers} members",
+                                    style: TextStyle(color: Colors.grey[700]),
+                                  ),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.more_vert),
+                                    onPressed: () {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        shape: const RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(20),
+                                          ),
                                         ),
-                                        color: Colors.white,
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            width: 50,
-                                            height: 5,
-                                            margin: const EdgeInsets.only(
-                                                bottom: 16),
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey[300],
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
+                                        builder: (context) => Container(
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: const BoxDecoration(
+                                            borderRadius: BorderRadius.vertical(
+                                              top: Radius.circular(20),
                                             ),
+                                            color: Colors.white,
                                           ),
-                                          // View Option
-                                          ListTile(
-                                            leading: Icon(Icons.visibility,
-                                                color: Colors.grey[700]),
-                                            title: const Text("View",
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                            onTap: () async {
-                                              Navigator.pop(context);
-                                              await Get.to(
-                                                  () => const TeamsInfoScreen(),
-                                                  arguments: {
-                                                    "teamId": teams[index].id,
-                                                    "teamName":
-                                                        teams[index].name,
-                                                    "role":
-                                                        await checkIfUserAdmin(
-                                                                teams[index].id)
-                                                            ? "admin"
-                                                            : "member"
-                                                  })?.then((result) {
-                                                if (result == 'refresh') {
-                                                  setState(() {
-                                                    fetchTeams();
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                width: 50,
+                                                height: 5,
+                                                margin: const EdgeInsets.only(
+                                                    bottom: 16),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey[300],
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                              // View Option
+                                              ListTile(
+                                                leading: Icon(Icons.visibility,
+                                                    color: Colors.grey[700]),
+                                                title: const Text("View",
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                                onTap: () async {
+                                                  Navigator.pop(context);
+                                                  await Get.to(
+                                                      () =>
+                                                          const TeamsInfoScreen(),
+                                                      arguments: {
+                                                        "teamId":
+                                                            teams[index].id,
+                                                        "teamName":
+                                                            teams[index].name,
+                                                        "role":
+                                                            await checkIfUserAdmin(
+                                                                    teams[index]
+                                                                        .id)
+                                                                ? "admin"
+                                                                : "member"
+                                                      })?.then((result) {
+                                                    if (result == 'refresh') {
+                                                      setState(() {
+                                                        fetchTeams(null);
+                                                      });
+                                                    }
                                                   });
-                                                }
-                                              });
-                                            },
-                                          ),
-                                          const Divider(),
-                                          // Edit Option
-                                          ListTile(
-                                            leading: Icon(Icons.edit,
-                                                color: Colors.grey[700]),
-                                            title: const Text("Edit",
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                            onTap: () async {
-                                              Navigator.pop(context);
-                                              await Get.to(
-                                                  () => const Add1TeamScreen(),
-                                                  arguments: {
-                                                    'id': team.id,
-                                                    'name': team.name,
-                                                  })?.then((result) {
-                                                if (result == 'refresh') {
-                                                  setState(() {
-                                                    fetchTeams();
+                                                },
+                                              ),
+                                              const Divider(),
+                                              // Edit Option
+                                              ListTile(
+                                                leading: Icon(Icons.edit,
+                                                    color: Colors.grey[700]),
+                                                title: const Text("Edit",
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                                onTap: () async {
+                                                  Navigator.pop(context);
+                                                  await Get.to(
+                                                      () =>
+                                                          const Add1TeamScreen(),
+                                                      arguments: {
+                                                        'id': team.id,
+                                                        'name': team.name,
+                                                      })?.then((result) {
+                                                    if (result == 'refresh') {
+                                                      setState(() {
+                                                        fetchTeams(null);
+                                                      });
+                                                    }
                                                   });
-                                                }
-                                              });
-                                            },
+                                                },
+                                              ),
+                                              const Divider(),
+                                              // Invite Option
+                                              ListTile(
+                                                leading: Icon(Icons.person_add,
+                                                    color: Colors.grey[700]),
+                                                title: const Text("Invite",
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                                onTap: () {
+                                                  Navigator.pop(context);
+                                                  sendInvitation(team.id);
+                                                },
+                                              ),
+                                              const Divider(),
+                                              // Delete Option
+                                              ListTile(
+                                                leading: Icon(Icons.delete,
+                                                    color: Colors.grey[700]),
+                                                title: const Text("Delete",
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                                onTap: () async {
+                                                  Navigator.pop(context);
+                                                  await deleteTeam(team.id);
+                                                },
+                                              ),
+                                            ],
                                           ),
-                                          const Divider(),
-                                          // Invite Option
-                                          ListTile(
-                                            leading: Icon(Icons.person_add,
-                                                color: Colors.grey[700]),
-                                            title: const Text("Invite",
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                            onTap: () {
-                                              Navigator.pop(context);
-                                              sendInvitation(team.id);
-                                            },
-                                          ),
-                                          const Divider(),
-                                          // Delete Option
-                                          ListTile(
-                                            leading: Icon(Icons.delete,
-                                                color: Colors.grey[700]),
-                                            title: const Text("Delete",
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                            onTap: () async {
-                                              Navigator.pop(context);
-                                              await deleteTeam(team.id);
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
 
           // Pending Invitations
           Align(

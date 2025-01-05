@@ -10,8 +10,8 @@ class Request {
   ItemData item_data;
   String status;
   String created_at;
-  //int? authorized_by;
-  //String authorized_at;
+  CustomUser? authorized_by;
+  String? authorized_at;
 
   Request({
     required this.id,
@@ -22,8 +22,8 @@ class Request {
     required this.item_data,
     required this.status,
     required this.created_at,
-    //this.authorized_by,
-    // this.authorized_at,
+    this.authorized_by,
+    this.authorized_at,
   });
 
   factory Request.fromJson(Map<String, dynamic> json) {
@@ -36,8 +36,10 @@ class Request {
       item_data: ItemData.fromJson(json['item_data']),
       status: json['status'],
       created_at: json['created_at'],
-      //authorized_by: json['authorized_by'],
-      //authorized_at: json['authorized_at'],
+      authorized_by: json['authorized_by'] != null
+          ? CustomUser.fromJson(json['authorized_by'])
+          : null, // Handle null for authorized_by
+      authorized_at: json['authorized_at'], // Handle null for authorized_at
     );
   }
 }
