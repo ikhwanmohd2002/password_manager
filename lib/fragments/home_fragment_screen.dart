@@ -22,6 +22,7 @@ class Home1FragmentScreen extends StatefulWidget {
 class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
   var formKey = GlobalKey<FormState>();
   List<Password1> passwords = [];
+  List<Password1> filteredPasswords = [];
   bool isLoadingPasswords = true;
   bool isLoadingSharedPasswords = true;
   TextEditingController sharedLinkController = TextEditingController();
@@ -35,7 +36,7 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
   @override
   void initState() {
     super.initState();
-    fetchPasswords(null);
+    fetchPasswords();
   }
 
   Future<void> sharePassword(int id) async {
@@ -395,7 +396,7 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
     }
   }
 
-  Future<void> fetchPasswords(String? search) async {
+  Future<void> fetchPasswords() async {
     try {
       String? token = await RememberUserPrefs.readToken();
 
@@ -411,21 +412,12 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
         for (var eachPassword in (responseBodyOfGetPassword as List)) {
           fetchedPasswords.add(Password1.fromJson(eachPassword));
         }
-        if (search != null) {
-          setState(() {
-            passwords = fetchedPasswords
-                .where((password) => password.login_username!
-                    .toLowerCase()
-                    .contains(search.toLowerCase()))
-                .toList();
-            isLoadingPasswords = false;
-          });
-        } else {
-          setState(() {
-            passwords = fetchedPasswords;
-            isLoadingPasswords = false;
-          });
-        }
+
+        setState(() {
+          passwords = fetchedPasswords;
+          filteredPasswords = passwords;
+          isLoadingPasswords = false;
+        });
       } else {
         setState(() {
           isLoadingPasswords = false;
@@ -433,7 +425,6 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
         //showSnackbar(context, "Error occurred executing query");
       }
     } catch (errorMsg) {
-      print(errorMsg);
       setState(() {
         isLoadingPasswords = false;
       });
@@ -450,21 +441,34 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  List<Password1> _applyFilter(String? filter) {
+    if (filter == "") {
+      return passwords;
+    }
+    return passwords
+        .where((password) => password.login_username!
+            .toLowerCase()
+            .contains(filter!.toLowerCase()))
+        .toList();
+  }
+
   Widget searchBar() {
     return TextField(
       controller: searchController,
       onChanged: (value) {
-        fetchPasswords(value);
+        setState(() {
+          filteredPasswords = _applyFilter(value);
+        });
       },
       decoration: InputDecoration(
         hintText: "Search...",
-        prefixIcon: Icon(Icons.search),
+        prefixIcon: const Icon(Icons.search),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
         ),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: EdgeInsets.symmetric(vertical: 10.0),
+        contentPadding: const EdgeInsets.symmetric(vertical: 10.0),
       ),
     );
   }
@@ -482,8 +486,9 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
             onPressed: () async {
               await Get.to(() => const Add2PasswordScreen())?.then((result) {
                 if (result == 'refresh') {
+                  searchController.clear;
                   setState(() {
-                    fetchPasswords(null);
+                    fetchPasswords();
                   });
                 }
               });
@@ -501,7 +506,7 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
           Expanded(
             child: isLoadingPasswords
                 ? const Center(child: CircularProgressIndicator())
-                : (passwords.isEmpty && searchController.text == "")
+                : (filteredPasswords.isEmpty && searchController.text == "")
                     ? Center(
                         child: SingleChildScrollView(
                           child: Column(
@@ -535,8 +540,9 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
                                   await Get.to(() => const Add2PasswordScreen())
                                       ?.then((result) {
                                     if (result == 'refresh') {
+                                      searchController.clear;
                                       setState(() {
-                                        fetchPasswords(null);
+                                        fetchPasswords();
                                       });
                                     }
                                   });
@@ -547,7 +553,7 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
                           ),
                         ),
                       )
-                    : (passwords.isEmpty && searchController.text != "")
+                    : (filteredPasswords.isEmpty && searchController.text != "")
                         ? Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -579,7 +585,7 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
                             ),
                           )
                         : ListView.builder(
-                            itemCount: passwords.length,
+                            itemCount: filteredPasswords.length,
                             itemBuilder: (context, index) {
                               // Boolean to track visibility state
                               bool isPasswordVisible = false;
@@ -603,14 +609,15 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
                                               color: Colors.white),
                                         ),
                                         title: Text(
-                                          passwords[index].login_username!,
+                                          filteredPasswords[index]
+                                              .login_username!,
                                           style: const TextStyle(
                                               fontSize: 14.0,
                                               fontWeight: FontWeight.w500),
                                         ),
                                         subtitle: Text(
                                           isPasswordVisible
-                                              ? passwords[index]
+                                              ? filteredPasswords[index]
                                                   .decrypted_password!
                                               : '••••••••',
                                           style: const TextStyle(
@@ -704,7 +711,7 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
                                                               await Clipboard
                                                                   .setData(
                                                                 ClipboardData(
-                                                                    text: passwords[
+                                                                    text: filteredPasswords[
                                                                             index]
                                                                         .login_username
                                                                         .toString()),
@@ -746,7 +753,7 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
                                                               await Clipboard
                                                                   .setData(
                                                                 ClipboardData(
-                                                                    text: passwords[
+                                                                    text: filteredPasswords[
                                                                             index]
                                                                         .decrypted_password
                                                                         .toString()),
@@ -788,7 +795,7 @@ class _Home1FragmentScreenState extends State<Home1FragmentScreen> {
                                                               Navigator.pop(
                                                                   context);
                                                               sharePassword(
-                                                                  passwords[
+                                                                  filteredPasswords[
                                                                           index]
                                                                       .id!);
                                                             },

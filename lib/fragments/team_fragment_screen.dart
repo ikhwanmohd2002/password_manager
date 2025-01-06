@@ -26,6 +26,7 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
   final NavigationController navController = Get.find();
   final currentOnlineUser = Get.put(CurrentUser());
   List<Team> teams = [];
+  List<Team> filteredTeams = [];
   List<Invitation> pendingInvitations = [];
   bool isLoadingTeams = true;
   bool isLoadingInvitations = true;
@@ -36,11 +37,11 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
   @override
   void initState() {
     super.initState();
-    fetchTeams(null);
+    fetchTeams();
     fetchInvitations();
   }
 
-  Future<void> fetchTeams(String? search) async {
+  Future<void> fetchTeams() async {
     try {
       List<Team> listOfTeam = [];
 
@@ -67,20 +68,12 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
 
           listOfTeam.add(team);
         }
-        if (search != null) {
-          setState(() {
-            teams = listOfTeam
-                .where((team) =>
-                    team.name.toLowerCase().contains(search.toLowerCase()))
-                .toList();
-            isLoadingTeams = false;
-          });
-        } else {
-          setState(() {
-            teams = listOfTeam;
-            isLoadingTeams = false;
-          });
-        }
+
+        setState(() {
+          teams = listOfTeam;
+          filteredTeams = teams;
+          isLoadingTeams = false;
+        });
 
         // Update state once all teams and totals are fetched
       } else {
@@ -227,7 +220,8 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
             ),
           );
           setState(() {
-            fetchTeams(null);
+            searchController.clear;
+            fetchTeams();
           }); // Refresh the state
         } else if (res.statusCode == 404) {
           // ignore: use_build_context_synchronously
@@ -283,7 +277,8 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
           ),
         );
         setState(() {
-          fetchTeams(null);
+          searchController.clear;
+          fetchTeams();
           fetchInvitations();
         }); // Refresh UI if needed
       } else {
@@ -517,11 +512,23 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
     }
   }
 
+  List<Team> _applyFilter(String? filter) {
+    if (filter == "") {
+      return teams;
+    }
+    return teams
+        .where(
+            (team) => team.name.toLowerCase().contains(filter!.toLowerCase()))
+        .toList();
+  }
+
   Widget searchBar() {
     return TextField(
       controller: searchController,
       onChanged: (value) {
-        fetchTeams(value);
+        setState(() {
+          filteredTeams = _applyFilter(value);
+        });
       },
       decoration: InputDecoration(
         hintText: "Search...",
@@ -545,14 +552,13 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
         title: const Text("Teams"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add), // Add team icon
-            tooltip: "Add Team", // Tooltip for accessibility
+            icon: const Icon(Icons.add),
+            tooltip: "Add Team",
             onPressed: () async {
-              // Navigate to AddTeamScreen using Get
               await Get.to(() => const Add1TeamScreen())?.then((result) {
                 if (result == 'refresh') {
                   setState(() {
-                    fetchTeams(null);
+                    fetchTeams();
                   });
                 }
               });
@@ -562,14 +568,13 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
       ),
       body: Stack(
         children: [
-          // Teams List or Empty State
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8),
             child: searchBar(),
           ),
           isLoadingTeams
               ? const Center(child: CircularProgressIndicator())
-              : (teams.isEmpty && searchController.text == "")
+              : (filteredTeams.isEmpty && searchController.text == "")
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -600,7 +605,7 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                                   ?.then((result) {
                                 if (result == 'refresh') {
                                   setState(() {
-                                    fetchTeams(null);
+                                    fetchTeams();
                                   });
                                 }
                               });
@@ -610,7 +615,7 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                         ],
                       ),
                     )
-                  : (teams.isEmpty && searchController.text != "")
+                  : (filteredTeams.isEmpty && searchController.text != "")
                       ? Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -645,9 +650,9 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                           padding: const EdgeInsets.only(bottom: 100, top: 70),
                           child: ListView.builder(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            itemCount: teams.length,
+                            itemCount: filteredTeams.length,
                             itemBuilder: (context, index) {
-                              final team = teams[index];
+                              final team = filteredTeams[index];
                               return Card(
                                 margin: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 8),
@@ -719,20 +724,17 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                                                       () =>
                                                           const TeamsInfoScreen(),
                                                       arguments: {
-                                                        "teamId":
-                                                            teams[index].id,
-                                                        "teamName":
-                                                            teams[index].name,
+                                                        "teamId": team.id,
+                                                        "teamName": team.name,
                                                         "role":
                                                             await checkIfUserAdmin(
-                                                                    teams[index]
-                                                                        .id)
+                                                                    team.id)
                                                                 ? "admin"
                                                                 : "member"
                                                       })?.then((result) {
                                                     if (result == 'refresh') {
                                                       setState(() {
-                                                        fetchTeams(null);
+                                                        fetchTeams();
                                                       });
                                                     }
                                                   });
@@ -758,7 +760,7 @@ class _TeamsInfoFragmentScreenState extends State<TeamsInfoFragmentScreen> {
                                                       })?.then((result) {
                                                     if (result == 'refresh') {
                                                       setState(() {
-                                                        fetchTeams(null);
+                                                        fetchTeams();
                                                       });
                                                     }
                                                   });

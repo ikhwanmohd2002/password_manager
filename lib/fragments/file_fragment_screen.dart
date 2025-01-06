@@ -25,6 +25,7 @@ class File1FragmentScreen extends StatefulWidget {
 
 class _File1FragmentScreenState extends State<File1FragmentScreen> {
   List<File1> files = [];
+  List<File1> filteredFiles = [];
   bool isLoading = true;
   var formKey = GlobalKey<FormState>();
   var formKey1 = GlobalKey<FormState>();
@@ -42,10 +43,20 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
   void initState() {
     super.initState();
     RememberUserPrefs().checkTokenValidity();
-    fetchFiles(null);
+    fetchFiles();
   }
 
-  void fetchFiles(String? search) async {
+  List<File1> _applyFilter(String? filter) {
+    if (filter == "") {
+      return files;
+    }
+    return files
+        .where((file) =>
+            file.file_name.toLowerCase().contains(filter!.toLowerCase()))
+        .toList();
+  }
+
+  void fetchFiles() async {
     List<File1> fetchedFiles = [];
     try {
       String? token = await RememberUserPrefs.readToken();
@@ -61,20 +72,11 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
             .map((eachFile) => File1.fromJson(eachFile))
             .toList();
 
-        if (search != null) {
-          setState(() {
-            files = fetchedFiles
-                .where((file) =>
-                    file.file_name.toLowerCase().contains(search.toLowerCase()))
-                .toList();
-            isLoading = false;
-          });
-        } else {
-          setState(() {
-            files = fetchedFiles;
-            isLoading = false;
-          });
-        }
+        setState(() {
+          files = fetchedFiles;
+          filteredFiles = files;
+          isLoading = false;
+        });
       } else {
         setState(() {
           isLoading = false;
@@ -580,7 +582,9 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
     return TextField(
       controller: searchController,
       onChanged: (value) {
-        fetchFiles(value);
+        setState(() {
+          filteredFiles = _applyFilter(value);
+        });
       },
       decoration: InputDecoration(
         hintText: "Search...",
@@ -614,8 +618,9 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
             onPressed: () async {
               await Get.to(() => const Add2FileScreen())?.then((result) {
                 if (result == 'refresh') {
+                  searchController.clear;
                   setState(() {
-                    fetchFiles(null);
+                    fetchFiles();
                   });
                 }
               });
@@ -632,7 +637,7 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : (files.isEmpty && searchController.text == "")
+                : (filteredFiles.isEmpty && searchController.text == "")
                     ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -666,8 +671,9 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
                                 await Get.to(() => const Add2FileScreen())
                                     ?.then((result) {
                                   if (result == 'refresh') {
+                                    searchController.clear;
                                     setState(() {
-                                      fetchFiles(null);
+                                      fetchFiles();
                                     });
                                   }
                                 });
@@ -679,7 +685,7 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
                           ],
                         ),
                       )
-                    : (files.isEmpty && searchController.text != "")
+                    : (filteredFiles.isEmpty && searchController.text != "")
                         ? Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -711,9 +717,9 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
                             ),
                           )
                         : ListView.builder(
-                            itemCount: files.length,
+                            itemCount: filteredFiles.length,
                             itemBuilder: (context, index) {
-                              String file = files[index].file_name;
+                              String file = filteredFiles[index].file_name;
                               return Card(
                                 margin: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 6),
@@ -744,8 +750,8 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
                                       IconButton(
                                         icon: const Icon(Icons.download),
                                         onPressed: () {
-                                          downloadFile(files[index].id,
-                                              files[index].file_name);
+                                          downloadFile(filteredFiles[index].id,
+                                              filteredFiles[index].file_name);
                                         },
                                       ),
                                       IconButton(
@@ -753,7 +759,7 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
                                           Icons.share,
                                         ),
                                         onPressed: () {
-                                          shareFile(files[index].id);
+                                          shareFile(filteredFiles[index].id);
                                         },
                                       ),
                                     ],

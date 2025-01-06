@@ -22,16 +22,17 @@ class Vault1FragmentScreen extends StatefulWidget {
 
 class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
   List<VaultInfo> vaults = [];
+  List<VaultInfo> filteredVaults = [];
   bool isLoading = true;
   TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    fetchVaults(null);
+    fetchVaults();
   }
 
-  Future<void> fetchVaults(String? search) async {
+  Future<void> fetchVaults() async {
     List<VaultInfo> listOfVault = [];
     try {
       String? token = await RememberUserPrefs.readToken();
@@ -43,35 +44,20 @@ class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
       if (response.statusCode == 200) {
         var responseBodyOfGetVault = jsonDecode(response.body);
         for (var eachVault in (responseBodyOfGetVault as List)) {
-          // Create a VaultInfo object from JSON
           var vault = VaultInfo.fromJson(eachVault);
-
-          // If the vault is not part of a team, fetch and set total items
           if (vault.team == null) {
             int totalItems = await fetchTotalItems(eachVault['id']);
-            vault.totalItems =
-                totalItems; // Append totalItems to the VaultInfo object
+            vault.totalItems = totalItems;
           }
 
-          // Add the updated VaultInfo object to the list
           listOfVault.add(vault);
         }
 
-        if (search != null) {
-          setState(() {
-            vaults = listOfVault
-                .where((vault) =>
-                    vault.name.toLowerCase().contains(search.toLowerCase()) &&
-                    vault.team == null)
-                .toList();
-            isLoading = false;
-          });
-        } else {
-          setState(() {
-            vaults = listOfVault.where((vault) => vault.team == null).toList();
-            isLoading = false;
-          });
-        }
+        setState(() {
+          vaults = listOfVault.where((vault) => vault.team == null).toList();
+          filteredVaults = vaults;
+          isLoading = false;
+        });
       } else {
         throw Exception('Failed to load vaults');
       }
@@ -183,7 +169,8 @@ class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
             ),
           );
           setState(() {
-            fetchVaults(searchController.text);
+            fetchVaults();
+            searchController.clear();
           });
         } else {
           // Show error SnackBar
@@ -232,11 +219,23 @@ class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
     }
   }
 
+  List<VaultInfo> _applyFilter(String? filter) {
+    if (filter == "") {
+      return vaults;
+    }
+    return vaults
+        .where(
+            (vault) => vault.name.toLowerCase().contains(filter!.toLowerCase()))
+        .toList();
+  }
+
   Widget searchBar() {
     return TextField(
       controller: searchController,
       onChanged: (value) {
-        fetchVaults(value);
+        setState(() {
+          filteredVaults = _applyFilter(value);
+        });
       },
       decoration: InputDecoration(
         hintText: "Search...",
@@ -264,8 +263,9 @@ class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
             onPressed: () async {
               await Get.to(() => const Add2VaultScreen())?.then((result) {
                 if (result == 'refresh') {
+                  searchController.clear();
                   setState(() {
-                    fetchVaults(null);
+                    fetchVaults();
                   });
                 }
               });
@@ -282,7 +282,7 @@ class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : (vaults.isEmpty && searchController.text == "")
+                : (filteredVaults.isEmpty && searchController.text == "")
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -314,8 +314,9 @@ class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
                                 await Get.to(() => const Add2VaultScreen())
                                     ?.then((result) {
                                   if (result == 'refresh') {
+                                    searchController.clear();
                                     setState(() {
-                                      fetchVaults(null);
+                                      fetchVaults();
                                     });
                                   }
                                 });
@@ -335,7 +336,7 @@ class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
                           ],
                         ),
                       )
-                    : (vaults.isEmpty && searchController.text != "")
+                    : (filteredVaults.isEmpty && searchController.text != "")
                         ? Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -367,9 +368,9 @@ class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
                             ),
                           )
                         : ListView.builder(
-                            itemCount: vaults.length,
+                            itemCount: filteredVaults.length,
                             itemBuilder: (context, index) {
-                              final vault = vaults[index];
+                              final vault = filteredVaults[index];
                               return Card(
                                 margin: const EdgeInsets.symmetric(
                                     vertical: 8.0, horizontal: 12.0),
@@ -458,6 +459,7 @@ class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
                                                                     .bold)),
                                                     onTap: () {
                                                       Navigator.pop(context);
+                                                      searchController.clear();
                                                       Get.to(VaultInfoScreen(
                                                         vaultName: vault.name,
                                                         id: vault.id,
@@ -488,8 +490,10 @@ class _Vault1FragmentScreenState extends State<Vault1FragmentScreen> {
                                                           })?.then((result) {
                                                         if (result ==
                                                             'refresh') {
+                                                          searchController
+                                                              .clear();
                                                           setState(() {
-                                                            fetchVaults(null);
+                                                            fetchVaults();
                                                           });
                                                         }
                                                       });
