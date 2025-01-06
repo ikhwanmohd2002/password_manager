@@ -1509,7 +1509,7 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
                                 Expanded(
                                   child: Text(
                                     request.status == "approved"
-                                        ? "Accepted"
+                                        ? "Approved"
                                         : request.status == "rejected"
                                             ? "Rejected"
                                             : "Pending",
