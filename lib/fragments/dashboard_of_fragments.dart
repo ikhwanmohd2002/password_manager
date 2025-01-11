@@ -5,9 +5,9 @@ import 'package:get/get.dart';
 import 'package:password_manager/controllers/navigation_controller.dart';
 import 'package:password_manager/fragments/file_fragment_screen.dart';
 import 'package:password_manager/fragments/home_fragment_screen.dart';
-import 'package:password_manager/fragments/password_fragment_screen.dart';
 import 'package:password_manager/fragments/settings_fragment_screen.dart';
 import 'package:password_manager/fragments/team_fragment_screen.dart';
+import 'package:password_manager/fragments/tools_fragment_screen.dart';
 import 'package:password_manager/fragments/vault_fragment_screen.dart';
 import 'package:password_manager/user_preferences/current_user.dart';
 
@@ -17,10 +17,10 @@ class DashboardOfFragments extends StatelessWidget {
   final NavigationController navController = Get.put(NavigationController());
   final List<Widget> _fragmentScreens = [
     const Home1FragmentScreen(),
-    File1FragmentScreen(),
+    const File1FragmentScreen(),
     const Vault1FragmentScreen(),
     const TeamsInfoFragmentScreen(),
-    const PasswordFragmentScreen(),
+    const ToolsFragmentScreen(),
     const SettingsFragmentScreen(),
   ];
   final List _navigationButtonsProperties = [
@@ -47,7 +47,7 @@ class DashboardOfFragments extends StatelessWidget {
     {
       "active_icon": Icons.widgets_rounded,
       "non_active_icon": Icons.widgets_outlined,
-      "label": "Misc", // Represents miscellaneous items
+      "label": "Tools", // Represents miscellaneous items
     },
     {
       "active_icon": Icons.tune_rounded,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:password_manager/fragments/file_fragment_screen.dart';
 import 'package:password_manager/fragments/home_fragment_screen.dart';
-import 'package:password_manager/fragments/password_fragment_screen.dart';
+import 'package:password_manager/screens/password_generation_screen.dart';
 import 'package:password_manager/fragments/settings_fragment_screen.dart';
 import 'package:password_manager/fragments/team_fragment_screen.dart';
 import 'package:password_manager/fragments/vault_fragment_screen.dart';
@@ -27,10 +27,10 @@ class NavigationController extends GetxController {
 
   final List<Widget> _fragmentScreens = [
     const Home1FragmentScreen(),
-    File1FragmentScreen(),
-    TeamsInfoFragmentScreen(),
-    Vault1FragmentScreen(),
-    const PasswordFragmentScreen(),
+    const File1FragmentScreen(),
+    const TeamsInfoFragmentScreen(),
+    const Vault1FragmentScreen(),
+    const PasswordGenerationScreen(),
     const SettingsFragmentScreen(),
   ];
 }
