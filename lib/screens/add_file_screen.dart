@@ -39,6 +39,7 @@ class _Add2FileScreenState extends State<Add2FileScreen> {
   File? selectedFile;
   List<VaultItem> vaultItems = [];
   int? vaultID;
+  int? vaultIDInitial;
   int? teamID;
   CurrentUser currentUser = Get.put(CurrentUser());
 
@@ -171,6 +172,7 @@ class _Add2FileScreenState extends State<Add2FileScreen> {
     final arguments = hasArguments ? Get.arguments : {};
     vaultID = hasArguments ? arguments['vault'] : null;
     teamID = hasArguments ? arguments['team'] : null;
+    vaultIDInitial = vaultID;
 
     fetchVaults(teamID);
   }
@@ -196,7 +198,7 @@ class _Add2FileScreenState extends State<Add2FileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     //const SizedBox(height: 20),
-                    if (teamID == null && vaultID == null)
+                    if (teamID == null && vaultIDInitial == null)
                       DropdownButtonFormField<int>(
                         validator: (value) {
                           if (value == null) {

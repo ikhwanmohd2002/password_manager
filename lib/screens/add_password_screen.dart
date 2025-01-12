@@ -38,6 +38,7 @@ class Add2PasswordScreen extends StatefulWidget {
 class _Add2PasswordScreenState extends State<Add2PasswordScreen> {
   List<VaultItem> vaultItems = [];
   int? vaultID;
+  int? vaultIDInitial;
   int? teamID;
   var formKey = GlobalKey<FormState>();
   var usernameController = TextEditingController();
@@ -54,6 +55,7 @@ class _Add2PasswordScreenState extends State<Add2PasswordScreen> {
     final String? password = hasArguments ? arguments['password'] : null;
     final String? username = hasArguments ? arguments['username'] : null;
     vaultID = hasArguments ? arguments['vault'] : null;
+    vaultIDInitial = vaultID;
     teamID = hasArguments ? arguments['team'] : null;
 
     fetchVaults(teamID);
@@ -174,7 +176,7 @@ class _Add2PasswordScreenState extends State<Add2PasswordScreen> {
                 const SizedBox(height: 16),
 
                 // Vault Dropdown Field
-                if (teamID == null && vaultID == null)
+                if (teamID == null && vaultIDInitial == null)
                   DropdownButtonFormField<int>(
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
