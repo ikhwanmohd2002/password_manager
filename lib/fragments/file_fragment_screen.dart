@@ -754,14 +754,6 @@ class _File1FragmentScreenState extends State<File1FragmentScreen> {
                                               filteredFiles[index].file_name);
                                         },
                                       ),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.share,
-                                        ),
-                                        onPressed: () {
-                                          shareFile(filteredFiles[index].id);
-                                        },
-                                      ),
                                     ],
                                   ),
                                 ),

@@ -1167,22 +1167,24 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
                                           });
                                         },
                                       ),
-                                      const Divider(color: Colors.grey),
+                                      if (widget.teamID == null)
+                                        const Divider(color: Colors.grey),
 
                                       // Share Option
-                                      ListTile(
-                                        leading: Icon(Icons.share,
-                                            color: Colors.grey[700]),
-                                        title: const Text(
-                                          "Share",
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
+                                      if (widget.teamID == null)
+                                        ListTile(
+                                          leading: Icon(Icons.share,
+                                              color: Colors.grey[700]),
+                                          title: const Text(
+                                            "Share",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          onTap: () {
+                                            Navigator.pop(context);
+                                            sharePassword(info.id);
+                                          },
                                         ),
-                                        onTap: () {
-                                          Navigator.pop(context);
-                                          sharePassword(info.id);
-                                        },
-                                      ),
                                       const Divider(color: Colors.grey),
 
                                       // Delete Option
@@ -1335,20 +1337,22 @@ class _VaultInfoScreenState extends State<VaultInfoScreen>
                                   ),
 
                                   // Share Option
-                                  ListTile(
-                                    leading: Icon(Icons.share,
-                                        color: Colors.grey[700]),
-                                    title: const Text(
-                                      "Share",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                  if (widget.teamID == null)
+                                    ListTile(
+                                      leading: Icon(Icons.share,
+                                          color: Colors.grey[700]),
+                                      title: const Text(
+                                        "Share",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      onTap: () {
+                                        Navigator.pop(context);
+                                        shareFile(file.id);
+                                      },
                                     ),
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      shareFile(file.id);
-                                    },
-                                  ),
-                                  const Divider(color: Colors.grey),
+                                  if (widget.teamID == null)
+                                    const Divider(color: Colors.grey),
 
                                   // Delete Option
                                   ListTile(
