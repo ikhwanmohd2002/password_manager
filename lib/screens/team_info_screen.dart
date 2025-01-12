@@ -776,29 +776,30 @@ class _TeamssInfoFragmentScreenState extends State<TeamsInfoScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () async {
-                    await Get.to(() => const Add2VaultScreen(),
-                        arguments: {'team': teamId})?.then((result) {
-                      if (result == 'refresh') {
-                        setState(() {
-                          fetchVaults();
-                        });
-                      }
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                if (isAdmin)
+                  ElevatedButton(
+                    onPressed: () async {
+                      await Get.to(() => const Add2VaultScreen(),
+                          arguments: {'team': teamId})?.then((result) {
+                        if (result == 'refresh') {
+                          setState(() {
+                            fetchVaults();
+                          });
+                        }
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      "Create Vault",
+                      style: TextStyle(fontSize: 16),
                     ),
                   ),
-                  child: const Text(
-                    "Create Vault",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
               ],
             ),
           )
