@@ -43,9 +43,9 @@ class _PasswordHealthAnalysisState extends State<PasswordHealthAnalysis> {
           analysisData = PasswordAnalysis.fromJson(json.decode(response.body));
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to load password analysis")),
-        );
+        setState(() {
+          isLoading = false;
+        });
       }
     } catch (e) {
       // ScaffoldMessenger.of(context).showSnackBar(
@@ -157,6 +157,9 @@ class _PasswordHealthAnalysisState extends State<PasswordHealthAnalysis> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      const SizedBox(
+                        height: 20,
+                      ),
                       // Password Health Score
                       SizedBox(
                         height: 150,
