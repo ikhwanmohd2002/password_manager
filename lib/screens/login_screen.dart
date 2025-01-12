@@ -134,13 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<bool?> predictLoginAttempt(int time, int attempt, int variance) async {
     try {
-      String? token = await RememberUserPrefs.readToken();
-
       var res = await http.post(Uri.parse(API.predictLoginIntelliVault),
-          headers: {
-            'Authorization': 'Token $token',
-            'Content-Type': 'application/json',
-          },
           body: jsonEncode({
             "time": time,
             "attempt": attempt,
