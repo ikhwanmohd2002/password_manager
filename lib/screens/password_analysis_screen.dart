@@ -1,10 +1,12 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
+import 'package:password_manager/model/analysisIssues.dart';
 import 'package:password_manager/model/passwordAnalysis.dart';
 import 'package:password_manager/user_preferences/userPreferences.dart';
 
@@ -17,12 +19,14 @@ class PasswordHealthAnalysis extends StatefulWidget {
 
 class _PasswordHealthAnalysisState extends State<PasswordHealthAnalysis> {
   PasswordAnalysis? analysisData;
+  List<AnalysisIssue> analysisIssues = []; // Define analysisIssues here
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     fetchPasswordAnalysis();
+    fetchPasswordIssues();
   }
 
   Future<void> fetchPasswordAnalysis() async {
@@ -39,7 +43,6 @@ class _PasswordHealthAnalysisState extends State<PasswordHealthAnalysis> {
 
       if (response.statusCode == 200) {
         setState(() {
-          isLoading = false;
           analysisData = PasswordAnalysis.fromJson(json.decode(response.body));
         });
       } else {
@@ -51,6 +54,37 @@ class _PasswordHealthAnalysisState extends State<PasswordHealthAnalysis> {
       // ScaffoldMessenger.of(context).showSnackBar(
       //   const SnackBar(content: Text("An error occurred")),
       // );
+    }
+  }
+
+  Future<void> fetchPasswordIssues() async {
+    try {
+      String? token = await RememberUserPrefs.readToken();
+      final response = await http.get(
+        Uri.parse("${API.checkPasswordIntelliVault}password-issues/"),
+        headers: {
+          'Authorization': 'Token $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        List<AnalysisIssue> fetchedIssues = (json.decode(response.body) as List)
+            .map((data) => AnalysisIssue.fromJson(data))
+            .toList();
+        setState(() {
+          isLoading = false;
+          analysisIssues = fetchedIssues;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("An error occurred")),
+      );
     }
   }
 
@@ -68,9 +102,9 @@ class _PasswordHealthAnalysisState extends State<PasswordHealthAnalysis> {
 
       if (response.statusCode == 200) {
         setState(() {
-          isLoading = false;
           analysisData = PasswordAnalysis.fromJson(json.decode(response.body));
         });
+        fetchPasswordIssues();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Failed to load new password analysis")),
@@ -254,7 +288,7 @@ class _PasswordHealthAnalysisState extends State<PasswordHealthAnalysis> {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      // Weak Passwords Section
+
                       if (analysisData!.issues.isNotEmpty)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,61 +301,88 @@ class _PasswordHealthAnalysisState extends State<PasswordHealthAnalysis> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            ...analysisData!.issues.map<Widget>((Issue issue) {
+                            ...analysisIssues
+                                .map<Widget>((AnalysisIssue analysisIssue) {
                               return Card(
+                                elevation: 2,
+                                margin: const EdgeInsets.symmetric(
+                                    vertical: 8.0, horizontal: 16.0),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12.0),
                                 ),
-                                elevation: 4,
-                                margin: const EdgeInsets.symmetric(
-                                    vertical: 8.0, horizontal: 16.0),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 12.0, horizontal: 16.0),
-                                  leading: Icon(
-                                    issue.issueType == "similar"
-                                        ? Icons.warning
-                                        : issue.issueType == "breached"
-                                            ? Icons.error
-                                            : Icons
-                                                .repeat, // Icon for reused passwords
-                                    color: issue.issueType == "similar"
-                                        ? Colors.yellow
-                                        : issue.issueType == "breached"
-                                            ? Colors.red
-                                            : Colors
-                                                .blue, // Color for reused passwords
-                                    size: 32,
-                                  ),
-                                  title: Text(
-                                    issue.loginUsername,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Fixed Header with Username
+                                    ListTile(
+                                      leading: const CircleAvatar(
+                                        backgroundColor: Colors.grey,
+                                        child: Icon(Icons.lock,
+                                            color: Colors.white),
+                                      ),
+                                      title: Text(
+                                        analysisIssue.loginInfo.loginUsername,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        "${analysisIssue.issues.length} issues found",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  subtitle: Text(
-                                    issue.issueType == "similar"
-                                        ? "Similarity Score: ${issue.similarityScore?.toStringAsFixed(2)}%"
-                                        : issue.issueType == "breached"
-                                            ? "Times Exposed: ${issue.details["times_exposed"]}"
-                                            : "Reused in: ${issue.details["reused_in"].join(", ")}\nReuse Count: ${issue.details["reuse_count"]}", // Details for reused issue
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey,
+
+                                    // Expansion Section for Issues
+                                    ExpansionTile(
+                                      title: const Text(
+                                        "View Details",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      children: analysisIssue.issues
+                                          .map((Issue1 issue) {
+                                        return Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 4),
+                                                child: Text(
+                                                  issue.issueType == "similar"
+                                                      ? "Similarity Score: ${issue.similarityScore?.toStringAsFixed(2)}%"
+                                                      : issue.issueType ==
+                                                              "breached"
+                                                          ? "Times Exposed: ${issue.details.timesExposed ?? 0}"
+                                                          : "Reused in: ${issue.details.reusedIn?.join(", ") ?? "N/A"}",
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey.shade800,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList(),
                                     ),
-                                  ),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.more_vert),
-                                    onPressed: () {
-                                      // Action for trailing button
-                                    },
-                                  ),
+                                  ],
                                 ),
                               );
                             }),
                           ],
-                        ),
+                        )
                     ],
                   ),
                 ),

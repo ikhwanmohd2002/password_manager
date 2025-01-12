@@ -1,10 +1,9 @@
-// ignore_for_file: non_constant_identifier_names
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
 
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:password_manager/api_connection/api_connection.dart';
 import 'package:password_manager/constants/constant.dart';
@@ -55,14 +54,12 @@ class _PasswordGenerationScreenState extends State<PasswordGenerationScreen> {
 
         return generatedPassword;
       } else {
-        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Error sharing password")),
+          const SnackBar(content: Text("Error generating password")),
         );
         return null;
       }
     } catch (errorMsg) {
-      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("An unexpected error occurred")),
       );
@@ -114,8 +111,13 @@ class _PasswordGenerationScreenState extends State<PasswordGenerationScreen> {
                               onPressed: () async {
                                 await Clipboard.setData(
                                     ClipboardData(text: generatedPassword!));
-                                Fluttertoast.showToast(
-                                    msg: "Copied to clipboard");
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text("Password copied to clipboard"),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
                               },
                             ),
                           ],

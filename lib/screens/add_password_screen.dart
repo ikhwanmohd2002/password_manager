@@ -228,7 +228,7 @@ class _Add2PasswordScreenState extends State<Add2PasswordScreen> {
                           Future.delayed(const Duration(milliseconds: 1000),
                               () async {
                             String? result =
-                                await generatePassword(12, true, true, true);
+                                await generatePassword(20, true, true, true);
                             setState(() {
                               passNotifier.value =
                                   PasswordStrength.calculate(text: result!);
